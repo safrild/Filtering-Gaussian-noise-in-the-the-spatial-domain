@@ -29,18 +29,37 @@ cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, setImage)
 
 # kesobb a "zajositast" ki kellene szervezni egy kulon fuggvenybe?
 def kuwahara(img):
-    returnable = img.copy()
+    original = img.copy()
     # Kirajzoljuk az eredeti kepet
-    cv2.imshow('Greyscale original photo', returnable)
+    cv2.imshow('Greyscale original photo', original)
     # eloallitjuk a mesterseges zajt
-    noise = np.zeros(returnable.shape, np.int16)
+    noise = np.zeros(original.shape, np.int16)
     # varhato ertek: 0 , szoras: 20
-    cv2.randn(noise, 0.0, 20.0) # normalis eloszlasu zajhoz kell a randn
-    imnoise1 = cv2.add(returnable, noise, dtype=cv2.CV_8UC1)
+    cv2.randn(noise, 0.0, 20.0)  # normalis eloszlasu zajhoz kell a randn
+    imnoise = cv2.add(original, noise, dtype=cv2.CV_8UC1)
     # Kirajzoljuk a zajjal terhelt kepet
-    cv2.imshow('Photo after noising', imnoise1)
+    cv2.imshow('Photo after noising', imnoise)
 
-    return imnoise1
+    # Letrehozunk egy 5x5-os kernelt
+    kernel = np.ones((5, 5), np.uint8)
+
+    # a szeleket levesszuk egyelore
+    # inner = [400, 400, 600, 600]
+    # rect = cv2.rectangle(imnoise1, (inner[0], inner[1]), (inner[2], inner[3]), 0, 1)
+    # mean = cv2.mean(rect)
+
+    # mean = cv2.mean(imnoise1, kernel)
+    # print(mean)
+
+    rows, cols = imnoise.shape
+    counter = 0
+    for i in range(rows):
+        for j in range(cols):
+            current_pixel = imnoise[i, j]
+            counter = counter + 1
+    print(counter)
+
+    return imnoise
 
 
 cv2.waitKey(0)
