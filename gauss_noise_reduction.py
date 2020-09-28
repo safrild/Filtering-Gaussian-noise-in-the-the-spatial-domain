@@ -5,7 +5,7 @@ import statistics
 # kepek beolvasasa es tombbe helyezese
 im = cv2.imread('im1.jpg', cv2.IMREAD_GRAYSCALE)
 im2 = cv2.imread('im3.jpg', cv2.IMREAD_GRAYSCALE)
-images = [im, im2]
+images = [im2, im]
 
 
 # ez a resz felelos a kepek kozotti valtasert
@@ -108,16 +108,14 @@ def kuwahara(img):
                 'Q4': devq4
             }
 
-            print('Deviations:', deviation)
-            smallestdevvalue = min(deviation.values())
+            # print('Deviations of regions:', deviation)
             smallestdevregion = min(deviation, key=deviation.get)
-            print('Smallest deviation region: ', smallestdevregion)
-            # meanofregion = [r for r, m in mean.items() if r == smallestdevregion]
+            # print('Region with smallest deviation: ', smallestdevregion)
             meanofregion = mean[smallestdevregion]
-            print('Means: ', mean)
-            print('Mean of region with smallest dev: ', meanofregion)
+            # print('Means: ', mean)
+            # print('Mean of region with smallest dev: ', meanofregion)
 
-            # current_pixel = mean.get()
+            imnoise[i, j] = meanofregion
 
     return imnoise
 
