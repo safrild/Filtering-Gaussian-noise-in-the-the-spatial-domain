@@ -4,7 +4,7 @@ import statistics
 
 # kepek beolvasasa es tombbe helyezese
 im = cv2.imread('im1.jpg', cv2.IMREAD_GRAYSCALE)
-im2 = cv2.imread('im3.jpg', cv2.IMREAD_GRAYSCALE)
+im2 = cv2.imread('im2.jpg', cv2.IMREAD_GRAYSCALE)
 images = [im2, im]
 
 
@@ -12,19 +12,21 @@ images = [im2, im]
 def setImage(x):
     i = cv2.getTrackbarPos('Test photo', 'Denoising algorithms')
     if cv2.getTrackbarPos('Test photo', 'Denoising algorithms') == 0:
+        # hogyha visszahuzzuk 0 indexre, akkor tunjenek el az ablakok
         final = 0
         cv2.destroyWindow('Photo after noising')
         cv2.destroyWindow('Greyscale original photo')
+        cv2.destroyWindow('Photo after denoising')
     else:
         currentImage = images[i - 1]
         final = kuwahara(currentImage)
     cv2.imshow('Photo after denoising', final)
 
 
-# nemtom mit csinalok ezzel tbh
-sth = np.ndarray((20, 600, 3), np.uint8)
-sth.fill(192)
-cv2.imshow('Denoising algorithms', sth)
+# a csuszkahoz letrehozok egy ablakot
+im = np.ndarray((20, 600, 3), np.uint8)
+im.fill(192)
+cv2.imshow('Denoising algorithms', im)
 cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, setImage)
 
 
@@ -41,17 +43,6 @@ def kuwahara(img):
     # Kirajzoljuk a zajjal terhelt kepet
     cv2.imshow('Photo after noising', imnoise)
 
-    # Letrehozunk egy 5x5-os kernelt
-    # kernel = np.ones((5, 5), np.uint8)
-
-    # a szeleket levesszuk egyelore
-    # inner = [400, 400, 600, 600]
-    # rect = cv2.rectangle(imnoise, (inner[0], inner[1]), (inner[2], inner[3]), 0, 1)
-    # mean = cv2.mean(rect)
-
-    # mean = cv2.mean(imnoise, kernel)
-    # print(mean)
-
     rows, cols = imnoise.shape
     # print("kepmeret:", imnoise.shape)
 
@@ -63,10 +54,6 @@ def kuwahara(img):
             if j >= cols - 2 or i >= rows - 2:
                 break
 
-            # kernel[2, 2] = current_pixel
-            # https://stackoverflow.com/questions/28591549/sliding-window-over-an-image-opencv
-            # https://stackoverflow.com/questions/10896841/find-a-3x3-sliding-window-over-an-image?answertab=active#tab-top
-            # https://www.pyimagesearch.com/2015/03/23/sliding-windows-for-object-detection-with-python-and-opencv/
             Q1 = [imnoise[i - 2, j - 2], imnoise[i - 2, j - 1], imnoise[i - 2, j],
                   imnoise[i - 1, j - 2], imnoise[i - 1, j - 1], imnoise[i - 1, j],
                   imnoise[i, j - 2], imnoise[i, j - 1], imnoise[i, j]]
