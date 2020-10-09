@@ -9,7 +9,7 @@ images = [im2, im]
 
 
 # ez a resz felelos a kepek kozotti valtasert
-def setImage(x):
+def set_image(x):
     i = cv2.getTrackbarPos('Test photo', 'Denoising algorithms')
     if cv2.getTrackbarPos('Test photo', 'Denoising algorithms') == 0:
         # hogyha visszahuzzuk 0 indexre, akkor tunjenek el az ablakok
@@ -27,11 +27,10 @@ def setImage(x):
 im = np.ndarray((20, 600, 3), np.uint8)
 im.fill(192)
 cv2.imshow('Denoising algorithms', im)
-cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, setImage)
+cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, set_image)
 
 
-# kesobb a "zajositast" ki kellene szervezni egy kulon fuggvenybe?
-def kuwahara(img):
+def gaussian_noise(img):
     original = img.copy()
     # Kirajzoljuk az eredeti kepet
     cv2.imshow('Greyscale original photo', original)
@@ -42,13 +41,19 @@ def kuwahara(img):
     imnoise = cv2.add(original, noise, dtype=cv2.CV_8UC1)
     # Kirajzoljuk a zajjal terhelt kepet
     cv2.imshow('Photo after noising', imnoise)
+    return imnoise
+
+
+def kuwahara(img):
+    image = img.copy()
+    imnoise = gaussian_noise(image)
 
     rows, cols = imnoise.shape
     # print("kepmeret:", imnoise.shape)
 
     for i in range(0, rows):
         for j in range(0, cols):
-            current_pixel = imnoise[i, j]
+            # current_pixel = imnoise[i, j]
             # print("aktualis pixel es i es j: ", current_pixel, i, j)
             # kihagyjuk a kep szeleit egyelore
             if j >= cols - 2 or i >= rows - 2:
@@ -70,6 +75,8 @@ def kuwahara(img):
             # print(Q1)
             # print(cv2.mean(np.int32(Q1))[0])
             # print(statistics.stdev(np.int32(Q1)))
+
+            # 4 tizedesre kerekitjuk az ertekeket
 
             meanq1 = round(cv2.mean(np.int32(Q1))[0], 4)
             meanq2 = round(cv2.mean(np.int32(Q2))[0], 4)
