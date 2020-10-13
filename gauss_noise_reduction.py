@@ -117,15 +117,17 @@ def kuwahara(img):
 def gradient_inverse_weighted(img):
     image = img.copy()
     imnoise = gaussian_noise(image)
+    imnoise = np.float32(imnoise)
     rows, cols = imnoise.shape
     for i in range(0, rows):
         for j in range(0, cols):
             # kihagyjuk a kep szeleit egyelore
             if j >= cols - 1 or i >= rows - 1:
                 break
-            distance1 = imnoise[i - 1, j - 1] - imnoise[i, j]
+            distance1 = round(imnoise[i - 1, j - 1] - imnoise[i, j], 4)
             print("imnoise i-1 j-1: ", imnoise[i - 1, j - 1], "imnoise i j: ", imnoise[i, j])
             print("distance1: ", distance1)
+
             distance2 = imnoise[i - 1, j] - imnoise[i, j]
             distance3 = imnoise[i - 1, j + 1] - imnoise[i, j]
             distance4 = imnoise[i, j - 1] - imnoise[i, j]
@@ -159,6 +161,7 @@ def gradient_inverse_weighted(img):
                              i + 1, j - 1] + weight7 * imnoise[i + 1, j] + weight8 * imnoise[i + 1, j]
 
             imnoise[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
+    imnoise = np.uint8(imnoise)
 
     return imnoise
 
