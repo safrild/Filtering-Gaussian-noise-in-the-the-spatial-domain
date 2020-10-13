@@ -114,5 +114,31 @@ def kuwahara(img):
     return imnoise
 
 
+def gradient_inverse_weighted(img):
+    image = img.copy()
+    imnoise = gaussian_noise(image)
+    rows, cols = imnoise.shape
+    for i in range(0, rows):
+        for j in range(0, cols):
+            # kihagyjuk a kep szeleit egyelore
+            if j >= cols - 1 or i >= rows - 1:
+                break
+            sum_delta = delta(imnoise, i, j, -1, -1) + delta(imnoise, i, j, -1, 0) + delta(imnoise, i, j, -1, 1) + \
+                        delta(imnoise, i, j, 0, -1) + delta(imnoise, i, j, 0, 1) + \
+                        delta(imnoise, i, j, 1, -1) + delta(imnoise, i, j, 1, 0) + delta(imnoise, i, j, 1, 1)
+
+
+# egy adott pixelre számol
+def delta(img, i, j, k, l):
+    image = img.copy()
+    distance = image[i + k, j + l] - image[i, j]
+    delta = 0
+    if distance > 0 or distance < 0:
+        delta = 1 / distance
+    elif distance == 0:
+        delta = 2
+    return delta
+
+
 cv2.waitKey(0)
 cv2.destroyAllWindows()
