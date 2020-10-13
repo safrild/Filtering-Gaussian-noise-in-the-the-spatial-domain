@@ -19,7 +19,7 @@ def set_image(x):
         cv2.destroyWindow('Photo after denoising')
     else:
         currentImage = images[i - 1]
-        final = kuwahara(currentImage)
+        final = gradient_inverse_weighted(currentImage)
     cv2.imshow('Photo after denoising', final)
 
 
@@ -123,21 +123,44 @@ def gradient_inverse_weighted(img):
             # kihagyjuk a kep szeleit egyelore
             if j >= cols - 1 or i >= rows - 1:
                 break
-            sum_delta = delta(imnoise, i, j, -1, -1) + delta(imnoise, i, j, -1, 0) + delta(imnoise, i, j, -1, 1) + \
-                        delta(imnoise, i, j, 0, -1) + delta(imnoise, i, j, 0, 1) + \
-                        delta(imnoise, i, j, 1, -1) + delta(imnoise, i, j, 1, 0) + delta(imnoise, i, j, 1, 1)
+            distance1 = imnoise[i - 1, j - 1] - imnoise[i, j]
+            print("imnoise i-1 j-1: ", imnoise[i - 1, j - 1], "imnoise i j: ", imnoise[i, j])
+            print("distance1: ", distance1)
+            distance2 = imnoise[i - 1, j] - imnoise[i, j]
+            distance3 = imnoise[i - 1, j + 1] - imnoise[i, j]
+            distance4 = imnoise[i, j - 1] - imnoise[i, j]
+            distance5 = imnoise[i, j + 1] - imnoise[i, j]
+            distance6 = imnoise[i + 1, j - 1] - imnoise[i, j]
+            distance7 = imnoise[i + 1, j] - imnoise[i, j]
+            distance8 = imnoise[i + 1, j + 1] - imnoise[i, j]
 
+            delta1 = 1 / distance1 if distance1 > 0 else 2
+            delta2 = 1 / distance2 if distance2 > 0 else 2
+            delta3 = 1 / distance3 if distance3 > 0 else 2
+            delta4 = 1 / distance4 if distance4 > 0 else 2
+            delta5 = 1 / distance5 if distance5 > 0 else 2
+            delta6 = 1 / distance6 if distance6 > 0 else 2
+            delta7 = 1 / distance7 if distance7 > 0 else 2
+            delta8 = 1 / distance8 if distance8 > 0 else 2
 
-# egy adott pixelre számol
-def delta(img, i, j, k, l):
-    image = img.copy()
-    distance = image[i + k, j + l] - image[i, j]
-    delta = 0
-    if distance > 0 or distance < 0:
-        delta = 1 / distance
-    elif distance == 0:
-        delta = 2
-    return delta
+            sum_delta = delta1 + delta2 + delta3 + delta4 + delta5 + delta6 + delta7 + delta8
+
+            weight1 = delta1 / sum_delta
+            weight2 = delta2 / sum_delta
+            weight3 = delta3 / sum_delta
+            weight4 = delta4 / sum_delta
+            weight5 = delta5 / sum_delta
+            weight6 = delta6 / sum_delta
+            weight7 = delta7 / sum_delta
+            weight8 = delta8 / sum_delta
+
+            sum_weight = weight1 * imnoise[i - 1, j - 1] + weight2 * imnoise[i - 1, j] + weight3 * imnoise[
+                i - 1, j + 1] + weight4 * imnoise[i, j - 1] + weight5 * imnoise[i, j + 1] + weight6 * imnoise[
+                             i + 1, j - 1] + weight7 * imnoise[i + 1, j] + weight8 * imnoise[i + 1, j]
+
+            imnoise[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
+
+    return imnoise
 
 
 cv2.waitKey(0)
