@@ -7,7 +7,9 @@ im = cv2.imread('im1.jpg', cv2.IMREAD_GRAYSCALE)
 im2 = cv2.imread('im2.jpg', cv2.IMREAD_GRAYSCALE)
 images = [im2, im]
 
-print('Algorithms: \n 1 - Kuwahara filter \n 2 - Gradient inverse weighted filter \n 3 - Sigma filter')
+zeroparam = cv2.imread('zeroparam.jpg', cv2.IMREAD_GRAYSCALE)
+
+print('Algorithms: \n 1 - Kuwahara filter \n 2 - Gradient inverse weighted filter \n 3 - Sigma filter \n')
 
 
 # ez a resz felelos a kepek kozotti valtasert
@@ -17,7 +19,7 @@ def set_image(x):
     if cv2.getTrackbarPos('Test photo', 'Denoising algorithms') == 0 or cv2.getTrackbarPos('Algorithm',
                                                                                            'Denoising algorithms') == 0:
         # hogyha visszahuzzuk 0 indexre, akkor tunjenek el az ablakok
-        final = 0
+        final = zeroparam
         cv2.destroyWindow('Photo after noising')
         cv2.destroyWindow('Greyscale original photo')
         cv2.destroyWindow('Photo after denoising')
@@ -37,8 +39,8 @@ def set_image(x):
 im = np.ndarray((20, 600, 3), np.uint8)
 im.fill(192)
 cv2.imshow('Denoising algorithms', im)
-cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, set_image)
 cv2.createTrackbar('Algorithm', 'Denoising algorithms', 0, 3, set_image)
+cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, set_image)
 
 
 # zajositjuk a kepet
@@ -52,6 +54,7 @@ def gaussian_noise(img):
     cv2.randn(noise, 0.0, 20.0)  # normalis eloszlasu zajhoz kell a randn
     imnoise = cv2.add(original, noise, dtype=cv2.CV_8UC1)
     # Kirajzoljuk a zajjal terhelt kepet
+    print('Gaussian noise added!')
     cv2.imshow('Photo after noising', imnoise)
     return imnoise
 
@@ -71,6 +74,7 @@ def kuwahara(img):
     # vmi = cv2.copyMakeBorder(imnoise, top, bottom, left, right, value)
     # imnoise = vmi
 
+    print('Applying the filter...')
     for i in range(0, rows):
         for j in range(0, cols):
             # current_pixel = imnoise[i, j]
@@ -131,6 +135,7 @@ def kuwahara(img):
 
             imnoise[i, j] = meanofregion
 
+    print('Filter applied!\n')
     return imnoise
 
 
@@ -139,14 +144,15 @@ def gradient_inverse_weighted(img):
     imnoise = gaussian_noise(image)
     imnoise = np.float32(imnoise)
     rows, cols = imnoise.shape
+    print('Applying the filter...')
     for i in range(0, rows):
         for j in range(0, cols):
             # kihagyjuk a kep szeleit egyelore
             if j >= cols - 1 or i >= rows - 1:
                 break
             distance1 = round(imnoise[i - 1, j - 1] - imnoise[i, j], 4)
-            print("imnoise i-1 j-1: ", imnoise[i - 1, j - 1], "imnoise i j: ", imnoise[i, j])
-            print("distance1: ", distance1)
+            # print("imnoise i-1 j-1: ", imnoise[i - 1, j - 1], "imnoise i j: ", imnoise[i, j])
+            # print("distance1: ", distance1)
 
             distance2 = imnoise[i - 1, j] - imnoise[i, j]
             distance3 = imnoise[i - 1, j + 1] - imnoise[i, j]
@@ -183,6 +189,7 @@ def gradient_inverse_weighted(img):
             imnoise[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
     imnoise = np.uint8(imnoise)
 
+    print('Filter applied!\n')
     return imnoise
 
 
@@ -206,16 +213,15 @@ def sigma(img):
                     if imnoise[i, j] - 40 < imnoise[i + k, j + l] < imnoise[i, j] + 40:
                         sum = sum + imnoise[i + k, j + l]
                         count += 1
-            average = round(sum/count, 4)
+            average = round(sum / count, 4)
             # print('Sum: ', round(sum, 4))
             # print('Count: ', count)
             # print('Average:  ', average, '\n')
             imnoise[i, j] = average
     imnoise = np.uint8(imnoise)
+
+    print('Filter applied!\n')
     return imnoise
-
-
-
 
 
 cv2.waitKey(0)
