@@ -7,19 +7,29 @@ im = cv2.imread('im1.jpg', cv2.IMREAD_GRAYSCALE)
 im2 = cv2.imread('im2.jpg', cv2.IMREAD_GRAYSCALE)
 images = [im2, im]
 
+print('Algorithms: \n 1 - Kuwahara filter \n 2 - Gradient inverse weighted filter \n 3 - Sigma filter')
+
 
 # ez a resz felelos a kepek kozotti valtasert
 def set_image(x):
     i = cv2.getTrackbarPos('Test photo', 'Denoising algorithms')
-    if cv2.getTrackbarPos('Test photo', 'Denoising algorithms') == 0:
+    j = cv2.getTrackbarPos('Algorithm', 'Denoising algorithms')
+    if cv2.getTrackbarPos('Test photo', 'Denoising algorithms') == 0 or cv2.getTrackbarPos('Algorithm',
+                                                                                           'Denoising algorithms') == 0:
         # hogyha visszahuzzuk 0 indexre, akkor tunjenek el az ablakok
         final = 0
         cv2.destroyWindow('Photo after noising')
         cv2.destroyWindow('Greyscale original photo')
         cv2.destroyWindow('Photo after denoising')
-    else:
+    elif cv2.getTrackbarPos('Algorithm', 'Denoising algorithms') == 1:
+        currentImage = images[i - 1]
+        final = kuwahara(currentImage)
+    elif cv2.getTrackbarPos('Algorithm', 'Denoising algorithms') == 2:
         currentImage = images[i - 1]
         final = gradient_inverse_weighted(currentImage)
+    else:
+        currentImage = images[i - 1]
+        final = sigma(currentImage)
     cv2.imshow('Photo after denoising', final)
 
 
@@ -28,8 +38,10 @@ im = np.ndarray((20, 600, 3), np.uint8)
 im.fill(192)
 cv2.imshow('Denoising algorithms', im)
 cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, set_image)
+cv2.createTrackbar('Algorithm', 'Denoising algorithms', 0, 3, set_image)
 
 
+# zajositjuk a kepet
 def gaussian_noise(img):
     original = img.copy()
     # Kirajzoljuk az eredeti kepet
@@ -46,10 +58,18 @@ def gaussian_noise(img):
 
 def kuwahara(img):
     image = img.copy()
+
     imnoise = gaussian_noise(image)
 
     rows, cols = imnoise.shape
     # print("kepmeret:", imnoise.shape)
+    # value = [0, 0, 0]
+    # top = int(0.05 * imnoise.shape[0])
+    # bottom = top
+    # left = int(0.05 * imnoise.shape[1])
+    # right = left
+    # vmi = cv2.copyMakeBorder(imnoise, top, bottom, left, right, value)
+    # imnoise = vmi
 
     for i in range(0, rows):
         for j in range(0, cols):
@@ -164,6 +184,38 @@ def gradient_inverse_weighted(img):
     imnoise = np.uint8(imnoise)
 
     return imnoise
+
+
+def sigma(img):
+    original = img.copy()
+    imnoise = gaussian_noise(original)
+    imnoise = np.float32(imnoise)
+    rows, cols = imnoise.shape
+    for i in range(0, rows):
+        for j in range(0, cols):
+            # kihagyjuk a kep szeleit egyelore
+            if j >= cols - 1 or i >= rows - 1:
+                break
+            sum = 0
+            count = 0
+            # kernelméret: (2n + 1, 2m + 1) ezesetben n, m = 1
+            # tehát 3x3-as ablakot vizsgálunk
+            for k in range(-1, 2):
+                for l in range(-1, 2):
+                    # mivel szigma = 20, 2szigma 40, tehat ebben az intervallumban vizsgalodunk
+                    if imnoise[i, j] - 40 < imnoise[i + k, j + l] < imnoise[i, j] + 40:
+                        sum = sum + imnoise[i + k, j + l]
+                        count += 1
+            average = round(sum/count, 4)
+            # print('Sum: ', round(sum, 4))
+            # print('Count: ', count)
+            # print('Average:  ', average, '\n')
+            imnoise[i, j] = average
+    imnoise = np.uint8(imnoise)
+    return imnoise
+
+
+
 
 
 cv2.waitKey(0)
