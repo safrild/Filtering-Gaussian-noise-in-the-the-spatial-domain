@@ -3,13 +3,13 @@ import numpy as np
 import statistics
 
 # kepek beolvasasa es tombbe helyezese
-im = cv2.imread('im1.jpg', cv2.IMREAD_GRAYSCALE)
+im1 = cv2.imread('im1.jpg', cv2.IMREAD_GRAYSCALE)
 im2 = cv2.imread('im2.jpg', cv2.IMREAD_GRAYSCALE)
-images = [im2, im]
+images = [im1, im2]
 
 zeroparam = cv2.imread('zeroparam.jpg', cv2.IMREAD_GRAYSCALE)
 
-print('Algorithms: \n 1 - Kuwahara filter \n 2 - Gradient inverse weighted filter \n 3 - Sigma filter \n')
+print('Algorithms: \n 1 - Kuwahara filter \n 2 - Gradient inverse weighted filter \n 3 - Sigma filter \n 4 - SUSAN \n')
 
 
 # ez a resz felelos a kepek kozotti valtasert
@@ -39,7 +39,7 @@ def set_image(x):
 im = np.ndarray((20, 600, 3), np.uint8)
 im.fill(192)
 cv2.imshow('Denoising algorithms', im)
-cv2.createTrackbar('Algorithm', 'Denoising algorithms', 0, 3, set_image)
+cv2.createTrackbar('Algorithm', 'Denoising algorithms', 0, 4, set_image)
 cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, set_image)
 
 
@@ -198,6 +198,7 @@ def sigma(img):
     imnoise = gaussian_noise(original)
     imnoise = np.float32(imnoise)
     rows, cols = imnoise.shape
+    print('Applying the filter...')
     for i in range(0, rows):
         for j in range(0, cols):
             # kihagyjuk a kep szeleit egyelore
@@ -219,6 +220,31 @@ def sigma(img):
             # print('Average:  ', average, '\n')
             imnoise[i, j] = average
     imnoise = np.uint8(imnoise)
+
+    print('Filter applied!\n')
+    return imnoise
+
+
+def susan(img):
+    original = img.copy()
+    imnoise = gaussian_noise(original)
+    rows, cols = imnoise.shape
+    print('Applying the filter...')
+    r = 1
+    t = 4096
+    sigma = 20.0
+    for i in range(0, rows):
+        for j in range(0, cols):
+            # kihagyjuk a kep szeleit egyelore
+            if j >= cols - 1 or i >= rows - 1:
+                break
+            x1 = np.exp((-(r ** 2 / 2 * sigma ** 2)) - ((imnoise[i, j - 1] - imnoise[i, j]) ** 2 / t ** 2))
+            x2 = np.exp((-(r ** 2 / 2 * sigma ** 2)) - ((imnoise[i, j + 1] - imnoise[i, j]) ** 2 / t ** 2))
+            x3 = np.exp((-(r ** 2 / 2 * sigma ** 2)) - ((imnoise[i - 1, j] - imnoise[i, j]) ** 2 / t ** 2))
+            x4 = np.exp((-(r ** 2 / 2 * sigma ** 2)) - ((imnoise[i + 1, j] - imnoise[i, j]) ** 2 / t ** 2))
+            summa = x1 + x2 + x3 + x4
+            final = (imnoise[i, j - 1] * x1 + imnoise[i, j + 1] * x2 + imnoise[i - 1, j] * x3 + imnoise[i + 1, j] * x4) / summa
+            imnoise[i, j] = final
 
     print('Filter applied!\n')
     return imnoise
