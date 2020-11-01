@@ -42,6 +42,13 @@ cv2.imshow('Denoising algorithms', im)
 cv2.createTrackbar('Algorithm', 'Denoising algorithms', 0, 4, set_image)
 cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, set_image)
 
+# ezzel a fuggvennyel toltjuk ki a kepszeleket zajszures elott "kiterjesztessel"
+# a kepek szelein talalhato ertekeket terjesztjuk ki, ezeket igy figyelembe vehetik a zajszuro algoritmusok
+def border_padding(img, value):
+    src = img.copy()
+    output = cv2.copyMakeBorder(src, value, value, value, value, cv2.BORDER_REPLICATE, None, None)
+    return output
+
 
 # zajositjuk a kepet
 def gaussian_noise(img):
@@ -62,9 +69,13 @@ def gaussian_noise(img):
 def kuwahara(img):
     image = img.copy()
 
-    imnoise = gaussian_noise(image)
+    noisy = gaussian_noise(image)
 
-    rows, cols = imnoise.shape
+    # kitoltjuk a kep szeleit
+    # a "kiterjesztett", "padded" kepet nem jelentitjuk meg
+    imnoise = border_padding(noisy, 2)
+
+    rows, cols = noisy.shape
     # print("kepmeret:", imnoise.shape)
     # value = [0, 0, 0]
     # top = int(0.05 * imnoise.shape[0])
@@ -75,13 +86,10 @@ def kuwahara(img):
     # imnoise = vmi
 
     print('Applying the filter...')
-    for i in range(0, rows):
-        for j in range(0, cols):
+    for i in range(2, rows):
+        for j in range(2, cols):
             # current_pixel = imnoise[i, j]
             # print("aktualis pixel es i es j: ", current_pixel, i, j)
-            # kihagyjuk a kep szeleit egyelore
-            if j >= cols - 2 or i >= rows - 2:
-                break
 
             Q1 = [imnoise[i - 2, j - 2], imnoise[i - 2, j - 1], imnoise[i - 2, j],
                   imnoise[i - 1, j - 2], imnoise[i - 1, j - 1], imnoise[i - 1, j],
@@ -133,23 +141,22 @@ def kuwahara(img):
             # print('Means: ', mean)
             # print('Mean of region with smallest dev: ', meanofregion)
 
-            imnoise[i, j] = meanofregion
+            noisy[i, j] = meanofregion
 
     print('Filter applied!\n')
-    return imnoise
+    return noisy
 
 
 def gradient_inverse_weighted(img):
     image = img.copy()
-    imnoise = gaussian_noise(image)
+    noisy = gaussian_noise(image)
+    imnoise = border_padding(noisy, 1)
+    noisy = np.float32(noisy)
     imnoise = np.float32(imnoise)
-    rows, cols = imnoise.shape
+    rows, cols = noisy.shape
     print('Applying the filter...')
-    for i in range(0, rows):
-        for j in range(0, cols):
-            # kihagyjuk a kep szeleit egyelore
-            if j >= cols - 1 or i >= rows - 1:
-                break
+    for i in range(1, rows):
+        for j in range(1, cols):
             distance1 = round(imnoise[i - 1, j - 1] - imnoise[i, j], 4)
             # print("imnoise i-1 j-1: ", imnoise[i - 1, j - 1], "imnoise i j: ", imnoise[i, j])
             # print("distance1: ", distance1)
@@ -186,24 +193,23 @@ def gradient_inverse_weighted(img):
                 i - 1, j + 1] + weight4 * imnoise[i, j - 1] + weight5 * imnoise[i, j + 1] + weight6 * imnoise[
                              i + 1, j - 1] + weight7 * imnoise[i + 1, j] + weight8 * imnoise[i + 1, j]
 
-            imnoise[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
-    imnoise = np.uint8(imnoise)
+            noisy[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
+    noisy = np.uint8(noisy)
 
     print('Filter applied!\n')
-    return imnoise
+    return noisy
 
 
 def sigma(img):
-    original = img.copy()
-    imnoise = gaussian_noise(original)
+    image = img.copy()
+    noisy = gaussian_noise(image)
+    imnoise = border_padding(noisy, 2)
+    noisy = np.float32(noisy)
     imnoise = np.float32(imnoise)
-    rows, cols = imnoise.shape
+    rows, cols = noisy.shape
     print('Applying the filter...')
-    for i in range(0, rows):
-        for j in range(0, cols):
-            # kihagyjuk a kep szeleit egyelore
-            if j >= cols - 1 or i >= rows - 1:
-                break
+    for i in range(2, rows):
+        for j in range(2, cols):
             sum = 0
             count = 0
             # kernelméret: (2n + 1, 2m + 1) ezesetben n, m = 1
@@ -218,36 +224,37 @@ def sigma(img):
             # print('Sum: ', round(sum, 4))
             # print('Count: ', count)
             # print('Average:  ', average, '\n')
-            imnoise[i, j] = average
-    imnoise = np.uint8(imnoise)
+            noisy[i, j] = average
+    noisy = np.uint8(noisy)
 
     print('Filter applied!\n')
-    return imnoise
+    return noisy
 
 
 def susan(img):
-    original = img.copy()
-    imnoise = gaussian_noise(original)
-    rows, cols = imnoise.shape
+    image = img.copy()
+    noisy = gaussian_noise(image)
+    imnoise = border_padding(noisy, 1)
+    rows, cols = noisy.shape
     print('Applying the filter...')
     r = 1
-    t = 4096
+    t = 12
     sigma = 20.0
-    for i in range(0, rows):
-        for j in range(0, cols):
+    for i in range(1, rows):
+        for j in range(1, cols):
             # kihagyjuk a kep szeleit egyelore
             if j >= cols - 1 or i >= rows - 1:
                 break
-            x1 = np.exp((-(r ** 2 / 2 * sigma ** 2)) - ((imnoise[i, j - 1] - imnoise[i, j]) ** 2 / t ** 2))
-            x2 = np.exp((-(r ** 2 / 2 * sigma ** 2)) - ((imnoise[i, j + 1] - imnoise[i, j]) ** 2 / t ** 2))
-            x3 = np.exp((-(r ** 2 / 2 * sigma ** 2)) - ((imnoise[i - 1, j] - imnoise[i, j]) ** 2 / t ** 2))
-            x4 = np.exp((-(r ** 2 / 2 * sigma ** 2)) - ((imnoise[i + 1, j] - imnoise[i, j]) ** 2 / t ** 2))
+            x1 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i, j - 1] - imnoise[i, j]) ** 2 / t ** 2))
+            x2 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i, j + 1] - imnoise[i, j]) ** 2 / t ** 2))
+            x3 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i - 1, j] - imnoise[i, j]) ** 2 / t ** 2))
+            x4 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i + 1, j] - imnoise[i, j]) ** 2 / t ** 2))
             summa = x1 + x2 + x3 + x4
             final = (imnoise[i, j - 1] * x1 + imnoise[i, j + 1] * x2 + imnoise[i - 1, j] * x3 + imnoise[i + 1, j] * x4) / summa
-            imnoise[i, j] = final
+            noisy[i, j] = final
 
     print('Filter applied!\n')
-    return imnoise
+    return noisy
 
 
 cv2.waitKey(0)
