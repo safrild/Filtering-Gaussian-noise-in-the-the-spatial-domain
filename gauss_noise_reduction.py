@@ -2,6 +2,8 @@ import cv2 as cv2
 import numpy as np
 import statistics
 
+SIGMA = 20.0
+
 # kepek beolvasasa es tombbe helyezese
 im1 = cv2.imread('im1.jpg', cv2.IMREAD_GRAYSCALE)
 im2 = cv2.imread('im2.jpg', cv2.IMREAD_GRAYSCALE)
@@ -15,7 +17,6 @@ print('Algorithms: \n 1 - Kuwahara filter \n 2 - Gradient inverse weighted filte
 # ez a resz felelos a kepek kozotti valtasert
 def set_image(x):
     i = cv2.getTrackbarPos('Test photo', 'Denoising algorithms')
-    j = cv2.getTrackbarPos('Algorithm', 'Denoising algorithms')
     if cv2.getTrackbarPos('Test photo', 'Denoising algorithms') == 0 or cv2.getTrackbarPos('Algorithm',
                                                                                            'Denoising algorithms') == 0:
         # hogyha visszahuzzuk 0 indexre, akkor tunjenek el az ablakok
@@ -42,6 +43,7 @@ cv2.imshow('Denoising algorithms', im)
 cv2.createTrackbar('Algorithm', 'Denoising algorithms', 0, 4, set_image)
 cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, set_image)
 
+
 # ezzel a fuggvennyel toltjuk ki a kepszeleket zajszures elott "kiterjesztessel"
 # a kepek szelein talalhato ertekeket terjesztjuk ki, ezeket igy figyelembe vehetik a zajszuro algoritmusok
 def border_padding(img, value):
@@ -53,12 +55,12 @@ def border_padding(img, value):
 # zajositjuk a kepet
 def gaussian_noise(img):
     original = img.copy()
-    # Kirajzoljuk az eredeti kepet
+    # kirajzoljuk az eredeti kepet
     cv2.imshow('Greyscale original photo', original)
     # eloallitjuk a mesterseges zajt
     noise = np.zeros(original.shape, np.int16)
-    # varhato ertek: 0 , szoras: 20
-    cv2.randn(noise, 0.0, 20.0)  # normalis eloszlasu zajhoz kell a randn
+    # varhato ertek: 0 , szoras: SIGMA konstans
+    cv2.randn(noise, 0.0, SIGMA)  # normalis eloszlasu zajhoz kell a randn
     imnoise = cv2.add(original, noise, dtype=cv2.CV_8UC1)
     # Kirajzoljuk a zajjal terhelt kepet
     print('Gaussian noise added!')
@@ -216,8 +218,8 @@ def sigma(img):
             # tehát 3x3-as ablakot vizsgálunk
             for k in range(-1, 2):
                 for l in range(-1, 2):
-                    # mivel szigma = 20, 2szigma 40, tehat ebben az intervallumban vizsgalodunk
-                    if imnoise[i, j] - 40 < imnoise[i + k, j + l] < imnoise[i, j] + 40:
+                    # 2SIGMA-t vizsgalunk, pl 20-as szoras eseten ez az ertek 40
+                    if imnoise[i, j] - 2 * SIGMA < imnoise[i + k, j + l] < imnoise[i, j] + 2 * SIGMA:
                         sum = sum + imnoise[i + k, j + l]
                         count += 1
             average = round(sum / count, 4)
@@ -239,7 +241,7 @@ def susan(img):
     print('Applying the filter...')
     r = 1
     t = 12
-    sigma = 20.0
+    sigma = SIGMA
     for i in range(1, rows):
         for j in range(1, cols):
             # kihagyjuk a kep szeleit egyelore
@@ -250,7 +252,8 @@ def susan(img):
             x3 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i - 1, j] - imnoise[i, j]) ** 2 / t ** 2))
             x4 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i + 1, j] - imnoise[i, j]) ** 2 / t ** 2))
             summa = x1 + x2 + x3 + x4
-            final = (imnoise[i, j - 1] * x1 + imnoise[i, j + 1] * x2 + imnoise[i - 1, j] * x3 + imnoise[i + 1, j] * x4) / summa
+            final = (imnoise[i, j - 1] * x1 + imnoise[i, j + 1] * x2 + imnoise[i - 1, j] * x3 + imnoise[
+                i + 1, j] * x4) / summa
             noisy[i, j] = final
 
     print('Filter applied!\n')
