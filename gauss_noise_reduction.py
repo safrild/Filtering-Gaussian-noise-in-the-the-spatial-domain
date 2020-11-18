@@ -1,12 +1,10 @@
-import cv2 as cv2
-import numpy as np
 import statistics
 import sys
-from PyQt5 import QtWidgets
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 
-SIGMA = 20.0
+import cv2 as cv2
+import numpy as np
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget
 
 # kepek beolvasasa es tombbe helyezese
 Lake = cv2.imread('Lake.jpg', cv2.IMREAD_GRAYSCALE)
@@ -58,22 +56,21 @@ def window():
     sys.exit(app.exec_())
 
 
-def call_algorithm(algorithm, sigma, inputPhoto):
-    global final
+def call_algorithm(algorithm, sigmaparam, inputphoto):
     print("\n")
     print(algorithm)
-    print(sigma)
-    print(inputPhoto)
+    print(sigmaparam)
+    print(inputphoto)
     print("\n")
-    sigmaValue = int(sigma)
+    sigma = int(sigmaparam)
     if algorithm == "Kuwahara":
-        final = kuwahara(images[inputPhoto])
+        final = kuwahara(images[inputphoto], sigma)
     elif algorithm == "GIW":
-        final = gradient_inverse_weighted(images[inputPhoto])
+        final = gradient_inverse_weighted(images[inputphoto], sigma)
     elif algorithm == "Sigma":
-        final = sigma(images[inputPhoto])
+        final = sigmaAlgorithm(images[inputphoto], sigma)
     elif algorithm == "SUSAN":
-        final = susan(images[inputPhoto])
+        final = susan(images[inputphoto], sigma)
     cv2.imshow('Image after denoising', final)
 
 
@@ -86,14 +83,14 @@ def border_padding(img, value):
 
 
 # zajositjuk a kepet
-def gaussian_noise(img):
+def gaussian_noise(img, sigma):
     original = img.copy()
     # kirajzoljuk az eredeti kepet
     cv2.imshow('Greyscale original photo', original)
     # eloallitjuk a mesterseges zajt
     noise = np.zeros(original.shape, np.int16)
     # varhato ertek: 0 , szoras: SIGMA konstans
-    cv2.randn(noise, 0.0, SIGMA)  # normalis eloszlasu zajhoz kell a randn
+    cv2.randn(noise, 0.0, sigma)  # normalis eloszlasu zajhoz kell a randn
     imnoise = cv2.add(original, noise, dtype=cv2.CV_8UC1)
     # Kirajzoljuk a zajjal terhelt kepet
     print('Gaussian noise added!')
@@ -101,30 +98,20 @@ def gaussian_noise(img):
     return imnoise
 
 
-def kuwahara(img):
+def kuwahara(img, sigma):
     image = img.copy()
 
-    noisy = gaussian_noise(image)
+    noisy = gaussian_noise(image, sigma)
 
     # kitoltjuk a kep szeleit
     # a "kiterjesztett", "padded" kepet nem jelentitjuk meg
     imnoise = border_padding(noisy, 2)
 
     rows, cols = noisy.shape
-    # print("kepmeret:", imnoise.shape)
-    # value = [0, 0, 0]
-    # top = int(0.05 * imnoise.shape[0])
-    # bottom = top
-    # left = int(0.05 * imnoise.shape[1])
-    # right = left
-    # vmi = cv2.copyMakeBorder(imnoise, top, bottom, left, right, value)
-    # imnoise = vmi
 
     print('Applying the filter...')
     for i in range(2, rows):
         for j in range(2, cols):
-            # current_pixel = imnoise[i, j]
-            # print("aktualis pixel es i es j: ", current_pixel, i, j)
 
             Q1 = [imnoise[i - 2, j - 2], imnoise[i - 2, j - 1], imnoise[i - 2, j],
                   imnoise[i - 1, j - 2], imnoise[i - 1, j - 1], imnoise[i - 1, j],
@@ -139,9 +126,6 @@ def kuwahara(img):
                   imnoise[i + 1, j], imnoise[i + 1, j + 1], imnoise[i + 1, j + 2],
                   imnoise[i + 2, j], imnoise[i + 2, j + 1], imnoise[i + 2, j + 2]]
 
-            # print(Q1)
-            # print(cv2.mean(np.int32(Q1))[0])
-            # print(statistics.stdev(np.int32(Q1)))
 
             # 4 tizedesre kerekitjuk az ertekeket
 
@@ -182,9 +166,9 @@ def kuwahara(img):
     return noisy
 
 
-def gradient_inverse_weighted(img):
+def gradient_inverse_weighted(img, sigma):
     image = img.copy()
-    noisy = gaussian_noise(image)
+    noisy = gaussian_noise(image, sigma)
     imnoise = border_padding(noisy, 1)
     noisy = np.float32(noisy)
     imnoise = np.float32(imnoise)
@@ -235,9 +219,9 @@ def gradient_inverse_weighted(img):
     return noisy
 
 
-def sigma(img):
+def sigmaAlgorithm(img, sigma):
     image = img.copy()
-    noisy = gaussian_noise(image)
+    noisy = gaussian_noise(image, sigma)
     imnoise = border_padding(noisy, 2)
     noisy = np.float32(noisy)
     imnoise = np.float32(imnoise)
@@ -251,8 +235,8 @@ def sigma(img):
             # tehát 3x3-as ablakot vizsgálunk
             for k in range(-1, 2):
                 for l in range(-1, 2):
-                    # 2SIGMA-t vizsgalunk, pl 20-as szoras eseten ez az ertek 40
-                    if imnoise[i, j] - 2 * SIGMA < imnoise[i + k, j + l] < imnoise[i, j] + 2 * SIGMA:
+                    # 2sigma-t vizsgalunk, pl 20-as szoras eseten ez az ertek 40
+                    if imnoise[i, j] - 2 * sigma < imnoise[i + k, j + l] < imnoise[i, j] + 2 * sigma:
                         sum = sum + imnoise[i + k, j + l]
                         count += 1
             average = round(sum / count, 4)
@@ -266,15 +250,14 @@ def sigma(img):
     return noisy
 
 
-def susan(img):
+def susan(img, sigma):
     image = img.copy()
-    noisy = gaussian_noise(image)
+    noisy = gaussian_noise(image, sigma)
     imnoise = border_padding(noisy, 1)
     rows, cols = noisy.shape
     print('Applying the filter...')
     r = 1
     t = 12
-    sigma = SIGMA
     for i in range(1, rows):
         for j in range(1, cols):
             # kihagyjuk a kep szeleit egyelore
