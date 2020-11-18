@@ -1,47 +1,80 @@
 import cv2 as cv2
 import numpy as np
 import statistics
+import sys
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 
 SIGMA = 20.0
 
 # kepek beolvasasa es tombbe helyezese
-im1 = cv2.imread('im1.jpg', cv2.IMREAD_GRAYSCALE)
-im2 = cv2.imread('im2.jpg', cv2.IMREAD_GRAYSCALE)
-images = [im1, im2]
+Lake = cv2.imread('Lake.jpg', cv2.IMREAD_GRAYSCALE)
+Tower = cv2.imread('Tower.jpg', cv2.IMREAD_GRAYSCALE)
+Wall = cv2.imread('Wall.jpg', cv2.IMREAD_GRAYSCALE)
+images = {"Tower": Tower,
+          "Wall": Wall,
+          "Lake": Lake}
 
 zeroparam = cv2.imread('zeroparam.jpg', cv2.IMREAD_GRAYSCALE)
 
-print('Algorithms: \n 1 - Kuwahara filter \n 2 - Gradient inverse weighted filter \n 3 - Sigma filter \n 4 - SUSAN \n')
+
+def window():
+    app = QApplication(sys.argv)
+    app.setStyle('Fusion')
+    win = QWidget()
+    win.setGeometry(200, 200, 300, 300)
+    win.setWindowTitle("Menu")
+    layout = QVBoxLayout()
+    label1 = QtWidgets.QLabel()
+    label1.setText("Algorithm: ")
+    layout.addWidget(label1)
+    comboBoxAlgorithm = QtWidgets.QComboBox(win)
+    comboBoxAlgorithm.addItems(["Kuwahara", "Sigma", "GIW", "SUSAN"])
+    layout.addWidget(comboBoxAlgorithm)
+    label2 = QtWidgets.QLabel(win)
+    label2.setText("Sigma value: ")
+    layout.addWidget(label2)
+    comboBoxSigma = QtWidgets.QComboBox(win)
+    comboBoxSigma.addItems(["20", "40", "80"])
+    layout.addWidget(comboBoxSigma)
+    label3 = QtWidgets.QLabel(win)
+    label3.setText("Input photo: ")
+    layout.addWidget(label3)
+    comboBoxInput = QtWidgets.QComboBox(win)
+    comboBoxInput.addItems(images)
+
+    layout.addWidget(comboBoxInput)
+    btnRun = QtWidgets.QPushButton(win)
+    btnRun.setText("Run algorithm")
+    btnRun.setCheckable(True)
+    layout.addWidget(btnRun)
+    if btnRun.isChecked():
+        print("checked")
+    win.setLayout(layout)
+    win.show()
+    btnRun.clicked.connect(lambda: call_algorithm(comboBoxAlgorithm.currentText(), comboBoxSigma.currentText(),
+                                                  comboBoxInput.currentText()))
+    sys.exit(app.exec_())
 
 
-# ez a resz felelos a kepek kozotti valtasert
-def set_image(x):
-    i = cv2.getTrackbarPos('Test photo', 'Denoising algorithms')
-    if cv2.getTrackbarPos('Test photo', 'Denoising algorithms') == 0 or cv2.getTrackbarPos('Algorithm',
-                                                                                           'Denoising algorithms') == 0:
-        # hogyha visszahuzzuk 0 indexre, akkor tunjenek el az ablakok
-        final = zeroparam
-        cv2.destroyWindow('Photo after noising')
-        cv2.destroyWindow('Greyscale original photo')
-        cv2.destroyWindow('Photo after denoising')
-    elif cv2.getTrackbarPos('Algorithm', 'Denoising algorithms') == 1:
-        currentImage = images[i - 1]
-        final = kuwahara(currentImage)
-    elif cv2.getTrackbarPos('Algorithm', 'Denoising algorithms') == 2:
-        currentImage = images[i - 1]
-        final = gradient_inverse_weighted(currentImage)
-    else:
-        currentImage = images[i - 1]
-        final = sigma(currentImage)
-    cv2.imshow('Photo after denoising', final)
-
-
-# a csuszkahoz letrehozok egy ablakot
-im = np.ndarray((20, 600, 3), np.uint8)
-im.fill(192)
-cv2.imshow('Denoising algorithms', im)
-cv2.createTrackbar('Algorithm', 'Denoising algorithms', 0, 4, set_image)
-cv2.createTrackbar('Test photo', 'Denoising algorithms', 0, 2, set_image)
+def call_algorithm(algorithm, sigma, inputPhoto):
+    global final
+    print("\n")
+    print(algorithm)
+    print(sigma)
+    print(inputPhoto)
+    print("\n")
+    sigmaValue = int(sigma)
+    if algorithm == "Kuwahara":
+        final = kuwahara(images[inputPhoto])
+    elif algorithm == "GIW":
+        final = gradient_inverse_weighted(images[inputPhoto])
+    elif algorithm == "Sigma":
+        final = sigma(images[inputPhoto])
+    elif algorithm == "SUSAN":
+        final = susan(images[inputPhoto])
+    cv2.imshow('Image after denoising', final)
 
 
 # ezzel a fuggvennyel toltjuk ki a kepszeleket zajszures elott "kiterjesztessel"
@@ -260,5 +293,6 @@ def susan(img):
     return noisy
 
 
+window()
 cv2.waitKey(0)
 cv2.destroyAllWindows()
