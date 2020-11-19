@@ -28,7 +28,7 @@ def window():
     label1.setText("Algorithm: ")
     layout.addWidget(label1)
     comboBoxAlgorithm = QtWidgets.QComboBox(win)
-    comboBoxAlgorithm.addItems(["Kuwahara", "Sigma", "Gradient inverse weighted method", "SUSAN"])
+    comboBoxAlgorithm.addItems(["Sigma", "Kuwahara", "Gradient inverse weighted method", "SUSAN"])
     layout.addWidget(comboBoxAlgorithm)
     label2 = QtWidgets.QLabel(win)
     label2.setText("Sigma value: ")
@@ -52,10 +52,21 @@ def window():
     btnRun.setText("Run algorithm")
     btnRun.setCheckable(True)
     layout.addWidget(btnRun)
+    comboBoxAlgorithm.currentIndexChanged.connect(lambda: update_kernel_size())
+
+    def update_kernel_size():
+        comboBoxKernel.clear()
+        if comboBoxAlgorithm.currentText() == "Kuwahara":
+            comboBoxKernel.addItem("5x5")
+        else:
+            comboBoxKernel.addItems(kernels)
+
     win.setLayout(layout)
     win.show()
+
     btnRun.clicked.connect(lambda: call_algorithm(comboBoxAlgorithm.currentText(), comboBoxSigma.currentText(),
                                                   comboBoxInput.currentText(), comboBoxKernel.currentText()))
+
     sys.exit(app.exec_())
 
 
@@ -222,7 +233,7 @@ def gradient_inverse_weighted(img, sigma):
 def sigmaAlgorithm(img, sigma, kernelSize):
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
-    imnoise = border_padding(noisy, 2)
+    imnoise = border_padding(noisy, kernelSize)
     noisy = np.float32(noisy)
     imnoise = np.float32(imnoise)
     rows, cols = noisy.shape
@@ -231,10 +242,10 @@ def sigmaAlgorithm(img, sigma, kernelSize):
         for j in range(2, cols):
             sum = 0
             count = 0
-            # kernelméret: (2n + 1, 2m + 1) ezesetben n, m = 1
-            # tehát 3x3-as ablakot vizsgálunk
+            # kernelméret: (2n + 1, 2m + 1)
+            # 3x3-as vagy 5x5-ös ablakot vizsgálunk
             for k in range(-1 * kernelSize, 1 * kernelSize + 1):
-            # for k in range(-1, 2):
+                # for k in range(-1, 2):
                 # for l in range(-1, 2):
                 for l in range(-1 * kernelSize, 1 * kernelSize + 1):
                     # 2sigma-t vizsgalunk, pl 20-as szoras eseten ez az ertek 40
