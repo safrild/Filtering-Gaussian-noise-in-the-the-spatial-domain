@@ -13,8 +13,8 @@ Wall = cv2.imread('Wall.jpg', cv2.IMREAD_GRAYSCALE)
 images = {"Tower": Tower,
           "Wall": Wall,
           "Lake": Lake}
-
-zeroparam = cv2.imread('zeroparam.jpg', cv2.IMREAD_GRAYSCALE)
+kernels = {"3x3": 1,
+           "5x5 (time consuming)": 2}
 
 
 def window():
@@ -28,7 +28,7 @@ def window():
     label1.setText("Algorithm: ")
     layout.addWidget(label1)
     comboBoxAlgorithm = QtWidgets.QComboBox(win)
-    comboBoxAlgorithm.addItems(["Kuwahara", "Sigma", "GIW", "SUSAN"])
+    comboBoxAlgorithm.addItems(["Kuwahara", "Sigma", "Gradient inverse weighted method", "SUSAN"])
     layout.addWidget(comboBoxAlgorithm)
     label2 = QtWidgets.QLabel(win)
     label2.setText("Sigma value: ")
@@ -36,31 +36,36 @@ def window():
     comboBoxSigma = QtWidgets.QComboBox(win)
     comboBoxSigma.addItems(["20", "40", "80"])
     layout.addWidget(comboBoxSigma)
+    label4 = QtWidgets.QLabel(win)
+    label4.setText("Kernel size: ")
+    layout.addWidget(label4)
+    comboBoxKernel = QtWidgets.QComboBox(win)
+    comboBoxKernel.addItems(kernels)
+    layout.addWidget(comboBoxKernel)
     label3 = QtWidgets.QLabel(win)
     label3.setText("Input photo: ")
     layout.addWidget(label3)
     comboBoxInput = QtWidgets.QComboBox(win)
     comboBoxInput.addItems(images)
-
     layout.addWidget(comboBoxInput)
     btnRun = QtWidgets.QPushButton(win)
     btnRun.setText("Run algorithm")
     btnRun.setCheckable(True)
     layout.addWidget(btnRun)
-    if btnRun.isChecked():
-        print("checked")
     win.setLayout(layout)
     win.show()
     btnRun.clicked.connect(lambda: call_algorithm(comboBoxAlgorithm.currentText(), comboBoxSigma.currentText(),
-                                                  comboBoxInput.currentText()))
+                                                  comboBoxInput.currentText(), comboBoxKernel.currentText()))
     sys.exit(app.exec_())
 
 
-def call_algorithm(algorithm, sigmaparam, inputphoto):
+def call_algorithm(algorithm, sigmaparam, inputphoto, kernelSize):
+    global final
     print("\n")
     print(algorithm)
     print(sigmaparam)
     print(inputphoto)
+    print(kernels[kernelSize])
     print("\n")
     sigma = int(sigmaparam)
     if algorithm == "Kuwahara":
@@ -68,7 +73,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto):
     elif algorithm == "GIW":
         final = gradient_inverse_weighted(images[inputphoto], sigma)
     elif algorithm == "Sigma":
-        final = sigmaAlgorithm(images[inputphoto], sigma)
+        final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelSize])
     elif algorithm == "SUSAN":
         final = susan(images[inputphoto], sigma)
     cv2.imshow('Image after denoising', final)
@@ -112,7 +117,6 @@ def kuwahara(img, sigma):
     print('Applying the filter...')
     for i in range(2, rows):
         for j in range(2, cols):
-
             Q1 = [imnoise[i - 2, j - 2], imnoise[i - 2, j - 1], imnoise[i - 2, j],
                   imnoise[i - 1, j - 2], imnoise[i - 1, j - 1], imnoise[i - 1, j],
                   imnoise[i, j - 2], imnoise[i, j - 1], imnoise[i, j]]
@@ -125,7 +129,6 @@ def kuwahara(img, sigma):
             Q4 = [imnoise[i, j], imnoise[i, j + 1], imnoise[i, j + 2],
                   imnoise[i + 1, j], imnoise[i + 1, j + 1], imnoise[i + 1, j + 2],
                   imnoise[i + 2, j], imnoise[i + 2, j + 1], imnoise[i + 2, j + 2]]
-
 
             # 4 tizedesre kerekitjuk az ertekeket
 
@@ -176,10 +179,7 @@ def gradient_inverse_weighted(img, sigma):
     print('Applying the filter...')
     for i in range(1, rows):
         for j in range(1, cols):
-            distance1 = round(imnoise[i - 1, j - 1] - imnoise[i, j], 4)
-            # print("imnoise i-1 j-1: ", imnoise[i - 1, j - 1], "imnoise i j: ", imnoise[i, j])
-            # print("distance1: ", distance1)
-
+            distance1 = imnoise[i - 1, j - 1] - imnoise[i, j]
             distance2 = imnoise[i - 1, j] - imnoise[i, j]
             distance3 = imnoise[i - 1, j + 1] - imnoise[i, j]
             distance4 = imnoise[i, j - 1] - imnoise[i, j]
@@ -219,7 +219,7 @@ def gradient_inverse_weighted(img, sigma):
     return noisy
 
 
-def sigmaAlgorithm(img, sigma):
+def sigmaAlgorithm(img, sigma, kernelSize):
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
     imnoise = border_padding(noisy, 2)
@@ -233,8 +233,10 @@ def sigmaAlgorithm(img, sigma):
             count = 0
             # kernelméret: (2n + 1, 2m + 1) ezesetben n, m = 1
             # tehát 3x3-as ablakot vizsgálunk
-            for k in range(-1, 2):
-                for l in range(-1, 2):
+            for k in range(-1 * kernelSize, 1 * kernelSize + 1):
+            # for k in range(-1, 2):
+                # for l in range(-1, 2):
+                for l in range(-1 * kernelSize, 1 * kernelSize + 1):
                     # 2sigma-t vizsgalunk, pl 20-as szoras eseten ez az ertek 40
                     if imnoise[i, j] - 2 * sigma < imnoise[i + k, j + l] < imnoise[i, j] + 2 * sigma:
                         sum = sum + imnoise[i + k, j + l]
