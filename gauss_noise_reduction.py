@@ -15,6 +15,8 @@ images = {"Tower": Tower,
           "Lake": Lake}
 kernels = {"3x3": 1,
            "5x5 (time consuming)": 2}
+radiuses = {"1": 1,
+            "2": 2}
 
 
 def window():
@@ -48,29 +50,47 @@ def window():
     comboBoxInput = QtWidgets.QComboBox(win)
     comboBoxInput.addItems(images)
     layout.addWidget(comboBoxInput)
+    label5 = QtWidgets.QLabel(win)
+    label5.setText("Radius: ")
+    layout.addWidget(label5)
+    label5.hide()
+    comboBoxR = QtWidgets.QComboBox(win)
+    comboBoxR.addItems(radiuses)
+    layout.addWidget(comboBoxR)
+    comboBoxR.hide()
     btnRun = QtWidgets.QPushButton(win)
     btnRun.setText("Run algorithm")
     btnRun.setCheckable(True)
     layout.addWidget(btnRun)
-    comboBoxAlgorithm.currentIndexChanged.connect(lambda: update_kernel_size())
+    comboBoxAlgorithm.currentIndexChanged.connect(lambda: update_window())
 
-    def update_kernel_size():
+    def update_window():
         comboBoxKernel.clear()
+        label5.hide()
+        comboBoxR.hide()
+        label4.show()
+        comboBoxKernel.show()
         if comboBoxAlgorithm.currentText() == "Kuwahara":
             comboBoxKernel.addItem("5x5")
         else:
             comboBoxKernel.addItems(kernels)
+        if comboBoxAlgorithm.currentText() == "SUSAN":
+            label5.show()
+            comboBoxR.show()
+            label4.hide()
+            comboBoxKernel.hide()
 
     win.setLayout(layout)
     win.show()
 
     btnRun.clicked.connect(lambda: call_algorithm(comboBoxAlgorithm.currentText(), comboBoxSigma.currentText(),
-                                                  comboBoxInput.currentText(), comboBoxKernel.currentText()))
+                                                  comboBoxInput.currentText(), comboBoxKernel.currentText(),
+                                                  comboBoxR.currentText()))
 
     sys.exit(app.exec_())
 
 
-def call_algorithm(algorithm, sigmaparam, inputphoto, kernelSize):
+def call_algorithm(algorithm, sigmaparam, inputphoto, kernelSize, r):
     global final
     print("\n")
     print(algorithm)
@@ -86,7 +106,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelSize):
     elif algorithm == "Sigma":
         final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelSize])
     elif algorithm == "SUSAN":
-        final = susan(images[inputphoto], sigma)
+        final = susan(images[inputphoto], sigma, radiuses[r])
     cv2.imshow('Image after denoising', final)
 
 
@@ -114,6 +134,7 @@ def gaussian_noise(img, sigma):
     return imnoise
 
 
+# nem allithato a kernelmeret ennel az algoritmusnal, mert az 5x5-os mar igyis tulsagosan idoigenyes
 def kuwahara(img, sigma):
     image = img.copy()
 
@@ -263,27 +284,46 @@ def sigmaAlgorithm(img, sigma, kernelSize):
     return noisy
 
 
-def susan(img, sigma):
+def susan(img, sigma, r):
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
     imnoise = border_padding(noisy, 1)
+    imnoise = np.float32(imnoise)
     rows, cols = noisy.shape
     print('Applying the filter...')
-    r = 1
     t = 12
+
     for i in range(1, rows):
         for j in range(1, cols):
-            # kihagyjuk a kep szeleit egyelore
-            if j >= cols - 1 or i >= rows - 1:
-                break
-            x1 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i, j - 1] - imnoise[i, j]) ** 2 / t ** 2))
-            x2 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i, j + 1] - imnoise[i, j]) ** 2 / t ** 2))
-            x3 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i - 1, j] - imnoise[i, j]) ** 2 / t ** 2))
-            x4 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i + 1, j] - imnoise[i, j]) ** 2 / t ** 2))
-            summa = x1 + x2 + x3 + x4
-            final = (imnoise[i, j - 1] * x1 + imnoise[i, j + 1] * x2 + imnoise[i - 1, j] * x3 + imnoise[
-                i + 1, j] * x4) / summa
-            noisy[i, j] = final
+            for m in range(-r, r):
+                if m == 0:
+                    continue
+                summa = 0
+                finalSum = 0
+                finalValue = 0
+                x1 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i, j + m] - imnoise[i, j]) ** 2 / t ** 2))
+                summa += x1
+                finalSum += imnoise[i, j + m] * x1
+                x2 = np.exp((-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i - m, j] - imnoise[i, j]) ** 2 / t ** 2))
+                summa += x2
+                finalSum += imnoise[i - m, j] * x2
+                if r == 1:
+                    finalValue = finalSum / summa
+                else:
+                    for n in range(-r + 1, r - 1):
+                        if n == 0:
+                            continue
+                        x3 = np.exp(
+                            (-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i + n, j + n] - imnoise[i, j]) ** 2 / t ** 2))
+                        summa += x3
+                        finalSum += (imnoise[i + n, j + n]) * x3
+                        x4 = np.exp(
+                            (-(r ** 2 / (2 * sigma ** 2))) - ((imnoise[i - n, j + n] - imnoise[i, j]) ** 2 / t ** 2))
+                        summa += x4
+                        finalSum += (imnoise[i - n, j + n]) * x4
+                        finalValue = finalSum / summa
+
+            noisy[i, j] = finalValue
 
     print('Filter applied!\n')
     return noisy
