@@ -30,7 +30,7 @@ def window():
     label1.setText("Algorithm: ")
     layout.addWidget(label1)
     comboBoxAlgorithm = QtWidgets.QComboBox(win)
-    comboBoxAlgorithm.addItems(["Sigma", "Kuwahara", "Gradient inverse weighted method", "SUSAN"])
+    comboBoxAlgorithm.addItems(["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method NEW", "SUSAN"])
     layout.addWidget(comboBoxAlgorithm)
     label2 = QtWidgets.QLabel(win)
     label2.setText("Sigma value: ")
@@ -107,6 +107,8 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelSize, r):
         final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelSize])
     elif algorithm == "SUSAN":
         final = susan(images[inputphoto], sigma, radiuses[r])
+    elif algorithm == "Gradient inverse weighted method NEW":
+        final = GIW_new(images[inputphoto], sigma, kernels[kernelSize])
     cv2.imshow('Image after denoising', final)
 
 
@@ -236,10 +238,10 @@ def gradient_inverse_weighted(img, sigma, kernelsize):
     return noisy
 
 
-def sigmaAlgorithm(img, sigma, kernelSize):
+def sigmaAlgorithm(img, sigma, kernelsize):
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
-    imnoise = border_padding(noisy, kernelSize)
+    imnoise = border_padding(noisy, kernelsize)
     noisy = np.float32(noisy)
     imnoise = np.float32(imnoise)
     rows, cols = noisy.shape
@@ -250,10 +252,10 @@ def sigmaAlgorithm(img, sigma, kernelSize):
             count = 0
             # kernelméret: (2n + 1, 2m + 1)
             # 3x3-as vagy 5x5-ös ablakot vizsgálunk
-            for k in range(-1 * kernelSize, 1 * kernelSize + 1):
+            for k in range(-1 * kernelsize, 1 * kernelsize + 1):
                 # for k in range(-1, 2):
                 # for l in range(-1, 2):
-                for l in range(-1 * kernelSize, 1 * kernelSize + 1):
+                for l in range(-1 * kernelsize, 1 * kernelsize + 1):
                     # 2sigma-t vizsgalunk, pl 20-as szoras eseten ez az ertek 40
                     if imnoise[i, j] - 2 * sigma < imnoise[i + k, j + l] < imnoise[i, j] + 2 * sigma:
                         sum = sum + imnoise[i + k, j + l]
@@ -277,6 +279,7 @@ def susan(img, sigma, r):
     rows, cols = noisy.shape
     print('Applying the filter...')
     t = 12
+    finalValue = 0
 
     for i in range(1, rows):
         for j in range(1, cols):
@@ -314,16 +317,45 @@ def susan(img, sigma, r):
     return noisy
 
 
-# def GIW_new(img, sigma):
-#     image = img.copy()
-#     noisy = gaussian_noise(image, sigma)
-#     imnoise = border_padding(noisy, 1)
-#     noisy = np.float32(noisy)
-#     imnoise = np.float32(imnoise)
-#     rows, cols = noisy.shape
-#     print('Applying the filter...')
-#     for i in range(1, rows):
-#         for j in range(1, cols):
+def GIW_new(img, sigma, kernelsize):
+    image = img.copy()
+    noisy = gaussian_noise(image, sigma)
+    imnoise = border_padding(noisy, 1)
+    noisy = np.float32(noisy)
+    imnoise = np.float32(imnoise)
+    rows, cols = noisy.shape
+    print('Applying the filter...')
+    for i in range(1, rows):
+        for j in range(1, cols):
+            sum_delta = 0
+            sum_weight_square = 0
+            sum_weight = 0
+            for k in range(-kernelsize, kernelsize):
+                if k == 0:
+                    continue
+                distance = imnoise[i + k, j + k] - imnoise[i, j]
+                delta = 1 / distance if distance > 0 else 2
+                sum_delta += delta
+
+            for s in range(-kernelsize, kernelsize):
+                if s == 0:
+                    continue
+                distance = imnoise[i + s, j + s] - imnoise[i, j]
+                delta = 1 / distance if distance > 0 else 2
+                # innentol van elteres az implementacioban, ez a NEW GIW mar
+                weight_square = ((delta / sum_delta)**2)
+                weight = delta / sum_delta
+                sum_weight += weight * imnoise[i + s, j + s] # kepletben y(i, j)
+                sum_weight_square += weight_square # ez a kepletben a D(i, j)
+                # K(i, j) = sum_weight_square / (1+sum_weight_square)
+
+            kij = sum_weight_square / (1+sum_weight_square)
+
+            noisy[i, j] = kij * imnoise[i, j] + ((1-kij) * sum_weight)
+
+    noisy = np.uint8(noisy)
+    print('Filter applied!\n')
+    return noisy
 
 
 window()
