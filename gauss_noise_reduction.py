@@ -101,8 +101,8 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelSize, r):
     sigma = int(sigmaparam)
     if algorithm == "Kuwahara":
         final = kuwahara(images[inputphoto], sigma)
-    elif algorithm == "GIW":
-        final = gradient_inverse_weighted(images[inputphoto], sigma)
+    elif algorithm == "Gradient inverse weighted method":
+        final = gradient_inverse_weighted(images[inputphoto], sigma, kernels[kernelSize])
     elif algorithm == "Sigma":
         final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelSize])
     elif algorithm == "SUSAN":
@@ -130,7 +130,7 @@ def gaussian_noise(img, sigma):
     imnoise = cv2.add(original, noise, dtype=cv2.CV_8UC1)
     # Kirajzoljuk a zajjal terhelt kepet
     print('Gaussian noise added!')
-    cv2.imshow('Photo after noising', imnoise)
+    cv2.imshow('Image after noising', imnoise)
     return imnoise
 
 
@@ -201,7 +201,7 @@ def kuwahara(img, sigma):
     return noisy
 
 
-def gradient_inverse_weighted(img, sigma):
+def gradient_inverse_weighted(img, sigma, kernelsize):
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
     imnoise = border_padding(noisy, 1)
@@ -209,44 +209,29 @@ def gradient_inverse_weighted(img, sigma):
     imnoise = np.float32(imnoise)
     rows, cols = noisy.shape
     print('Applying the filter...')
+
     for i in range(1, rows):
         for j in range(1, cols):
-            distance1 = imnoise[i - 1, j - 1] - imnoise[i, j]
-            distance2 = imnoise[i - 1, j] - imnoise[i, j]
-            distance3 = imnoise[i - 1, j + 1] - imnoise[i, j]
-            distance4 = imnoise[i, j - 1] - imnoise[i, j]
-            distance5 = imnoise[i, j + 1] - imnoise[i, j]
-            distance6 = imnoise[i + 1, j - 1] - imnoise[i, j]
-            distance7 = imnoise[i + 1, j] - imnoise[i, j]
-            distance8 = imnoise[i + 1, j + 1] - imnoise[i, j]
+            sum_delta = 0
+            sum_weight = 0
+            for k in range(-kernelsize, kernelsize):
+                if k == 0:
+                    continue
+                distance = imnoise[i + k, j + k] - imnoise[i, j]
+                delta = 1 / distance if distance > 0 else 2
+                sum_delta += delta
 
-            delta1 = 1 / distance1 if distance1 > 0 else 2
-            delta2 = 1 / distance2 if distance2 > 0 else 2
-            delta3 = 1 / distance3 if distance3 > 0 else 2
-            delta4 = 1 / distance4 if distance4 > 0 else 2
-            delta5 = 1 / distance5 if distance5 > 0 else 2
-            delta6 = 1 / distance6 if distance6 > 0 else 2
-            delta7 = 1 / distance7 if distance7 > 0 else 2
-            delta8 = 1 / distance8 if distance8 > 0 else 2
-
-            sum_delta = delta1 + delta2 + delta3 + delta4 + delta5 + delta6 + delta7 + delta8
-
-            weight1 = delta1 / sum_delta
-            weight2 = delta2 / sum_delta
-            weight3 = delta3 / sum_delta
-            weight4 = delta4 / sum_delta
-            weight5 = delta5 / sum_delta
-            weight6 = delta6 / sum_delta
-            weight7 = delta7 / sum_delta
-            weight8 = delta8 / sum_delta
-
-            sum_weight = weight1 * imnoise[i - 1, j - 1] + weight2 * imnoise[i - 1, j] + weight3 * imnoise[
-                i - 1, j + 1] + weight4 * imnoise[i, j - 1] + weight5 * imnoise[i, j + 1] + weight6 * imnoise[
-                             i + 1, j - 1] + weight7 * imnoise[i + 1, j] + weight8 * imnoise[i + 1, j]
+            for s in range(-kernelsize, kernelsize):
+                if s == 0:
+                    continue
+                distance = imnoise[i + s, j + s] - imnoise[i, j]
+                delta = 1 / distance if distance > 0 else 2
+                weight = delta / sum_delta
+                sum_weight += weight * imnoise[i + s, j + s]
 
             noisy[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
-    noisy = np.uint8(noisy)
 
+    noisy = np.uint8(noisy)
     print('Filter applied!\n')
     return noisy
 
@@ -327,6 +312,18 @@ def susan(img, sigma, r):
 
     print('Filter applied!\n')
     return noisy
+
+
+# def GIW_new(img, sigma):
+#     image = img.copy()
+#     noisy = gaussian_noise(image, sigma)
+#     imnoise = border_padding(noisy, 1)
+#     noisy = np.float32(noisy)
+#     imnoise = np.float32(imnoise)
+#     rows, cols = noisy.shape
+#     print('Applying the filter...')
+#     for i in range(1, rows):
+#         for j in range(1, cols):
 
 
 window()
