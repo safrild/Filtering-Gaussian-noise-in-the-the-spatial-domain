@@ -1,3 +1,4 @@
+import math
 import statistics
 import sys
 
@@ -30,7 +31,9 @@ def window():
     label1.setText("Algorithm: ")
     layout.addWidget(label1)
     comboBoxAlgorithm = QtWidgets.QComboBox(win)
-    comboBoxAlgorithm.addItems(["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method NEW", "SUSAN"])
+    comboBoxAlgorithm.addItems(
+        ["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method NEW", "SUSAN",
+         "Non-local fast"])
     layout.addWidget(comboBoxAlgorithm)
     label2 = QtWidgets.QLabel(win)
     label2.setText("Sigma value: ")
@@ -109,6 +112,8 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelSize, r):
         final = susan(images[inputphoto], sigma, radiuses[r])
     elif algorithm == "Gradient inverse weighted method NEW":
         final = GIW_new(images[inputphoto], sigma, kernels[kernelSize])
+    elif algorithm == "Non-local fast":
+        final = non_local_fast(images[inputphoto], sigma, kernels[kernelSize])
     cv2.imshow('Image after denoising', final)
 
 
@@ -343,16 +348,47 @@ def GIW_new(img, sigma, kernelsize):
                 distance = imnoise[i + s, j + s] - imnoise[i, j]
                 delta = 1 / distance if distance > 0 else 2
                 # innentol van elteres az implementacioban, ez a NEW GIW mar
-                weight_square = ((delta / sum_delta)**2)
+                weight_square = ((delta / sum_delta) ** 2)
                 weight = delta / sum_delta
-                sum_weight += weight * imnoise[i + s, j + s] # kepletben y(i, j)
-                sum_weight_square += weight_square # ez a kepletben a D(i, j)
+                sum_weight += weight * imnoise[i + s, j + s]  # kepletben y(i, j)
+                sum_weight_square += weight_square  # ez a kepletben a D(i, j)
                 # K(i, j) = sum_weight_square / (1+sum_weight_square)
 
-            kij = sum_weight_square / (1+sum_weight_square)
+            kij = sum_weight_square / (1 + sum_weight_square)
 
-            noisy[i, j] = kij * imnoise[i, j] + ((1-kij) * sum_weight)
+            noisy[i, j] = kij * imnoise[i, j] + ((1 - kij) * sum_weight)
 
+    noisy = np.uint8(noisy)
+    print('Filter applied!\n')
+    return noisy
+
+
+def non_local_fast(img, sigma, kernelsize):
+    image = img.copy()
+    noisy = gaussian_noise(image, sigma)
+    imnoise = border_padding(noisy, 12)
+    noisy = np.float32(noisy)
+    imnoise = np.float32(imnoise)
+    rows, cols = noisy.shape
+    print('Applying the filter...')
+    treshold = (math.sqrt(2) * sigma) / 5
+    print(treshold)
+    first_moment = 0
+    for i in range(1, rows):
+        for j in range(1, cols):
+            summa = 0
+            for k in range(-5, 5):
+                summa = summa + imnoise[i + k, j + k]
+            print("first moment 1: ", first_moment)
+            print("first moment 2: ", summa * (1 / 25))
+            print("difference: ", first_moment - summa * (1 / 25))
+            hipothesis = first_moment - summa * (1 / 25)
+            if abs(hipothesis) <= treshold:
+                print("okes")
+            else:
+                print("na ez mar nem fer bele")
+            first_moment = summa * (1 / 25)
+        # print("first moment: ", first_moment)
     noisy = np.uint8(noisy)
     print('Filter applied!\n')
     return noisy
