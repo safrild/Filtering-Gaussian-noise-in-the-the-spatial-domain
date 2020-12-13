@@ -371,24 +371,42 @@ def non_local_fast(img, sigma, kernelsize):
     imnoise = np.float32(imnoise)
     rows, cols = noisy.shape
     print('Applying the filter...')
-    treshold = (math.sqrt(2) * sigma) / 5
-    print(treshold)
+    treshold_first = (math.sqrt(2) * sigma) / 5
+    treshold_second = np.std(imnoise)
+    # treshold_second = math.sqrt((1 / ((rows * cols) - 1)))
     first_moment = 0
+    second_moment = 0
     for i in range(1, rows):
         for j in range(1, cols):
-            summa = 0
-            for k in range(-5, 5):
-                summa = summa + imnoise[i + k, j + k]
+            # First statistical moment: sum
+            sum_of_25 = 0
+            # Second statistical moment: sum of values - first moment
+            sum_of_differences = 0
+            for k in range(-5, 0):
+                for m in range(-5, 0):
+                    sum_of_25 = sum_of_25 + imnoise[i + k, j + m]
+                    # print("sum of 25", sum_of_25)
+                    sum_of_differences = sum_of_differences + ((imnoise[i + k, j + m] - first_moment) ** 2)
+                    # print("sum of differences ", sum_of_differences)
             print("first moment 1: ", first_moment)
-            print("first moment 2: ", summa * (1 / 25))
-            print("difference: ", first_moment - summa * (1 / 25))
-            hipothesis = first_moment - summa * (1 / 25)
-            if abs(hipothesis) <= treshold:
-                print("okes")
+            print("first moment 2: ", sum_of_25 * (1 / 25))
+            print("difference of first moments: ", first_moment - sum_of_25 * (1 / 25))
+            print("second moment 1: ", second_moment)
+            print("second moment 2: ", sum_of_differences * (1 / 24))
+            print("difference of second moments: ", second_moment - sum_of_differences * (1 / 24))
+            hipothesis_first = first_moment - sum_of_25 * (1 / 25)
+            hipothesis_second = second_moment - sum_of_differences * (1 / 24)
+            if abs(hipothesis_first) <= treshold_first:
+                print("okes first moment alapjan")
             else:
-                print("na ez mar nem fer bele")
-            first_moment = summa * (1 / 25)
-        # print("first moment: ", first_moment)
+                print("nem okes first alapjan")
+            if abs(hipothesis_second) <= treshold_second:
+                print("okes a second moment alapjan")
+            else:
+                print("nem okes second moment alapjan")
+            first_moment = sum_of_25 * (1 / 25)
+            second_moment = sum_of_differences * (1 / 24)
+
     noisy = np.uint8(noisy)
     print('Filter applied!\n')
     return noisy
