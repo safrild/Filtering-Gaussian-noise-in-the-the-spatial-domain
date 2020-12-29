@@ -374,26 +374,48 @@ def non_local_fast(img, sigma, kernelsize):
     treshold_first = (math.sqrt(2) * sigma) / 5
     treshold_second = np.std(imnoise)
     # treshold_second = math.sqrt((1 / ((rows * cols) - 1)))
-    first_moment = 0
-    second_moment = 0
+    # first_moment = 0
+    # second_moment = 0
     for i in range(1, rows):
         for j in range(1, cols):
             # First statistical moment: sum
             sum_of_25 = 0
             # Second statistical moment: sum of values - first moment
             sum_of_differences = 0
+            ############################
+            kernel = get_5x5_kernel(imnoise, i, j)
+            print("Ez a kezdeti kernel most: ", kernel)
+            for k in range(1, rows):
+                for m in range(1, cols):
+                    non_linear_kernel = get_5x5_kernel(imnoise, k, m)
+                    print("Ezt kell kivonni belole vagymi: ", non_linear_kernel)
+                    distances = np.array([])
+                    for n in range(0, 25):
+                        euclidean_distance = np.linalg.norm(kernel[n] - non_linear_kernel[n])
+                        distances = np.append(distances, euclidean_distance)
+                    print("Tavolsagok: ", distances)
+
+            """
             for k in range(-5, 0):
                 for m in range(-5, 0):
                     sum_of_25 = sum_of_25 + imnoise[i + k, j + m]
-                    # print("sum of 25", sum_of_25)
+                    print("sum of 25 is ", sum_of_25)
+                    ################
+                    tomb = np.append(tomb, [imnoise[i + k, j + m]])
+                    print(tomb)
+                    weight_of_current_pixel = np.linalg.norm()
                     sum_of_differences = sum_of_differences + ((imnoise[i + k, j + m] - first_moment) ** 2)
-                    # print("sum of differences ", sum_of_differences)
-            print("first moment 1: ", first_moment)
-            print("first moment 2: ", sum_of_25 * (1 / 25))
-            print("difference of first moments: ", first_moment - sum_of_25 * (1 / 25))
-            print("second moment 1: ", second_moment)
-            print("second moment 2: ", sum_of_differences * (1 / 24))
-            print("difference of second moments: ", second_moment - sum_of_differences * (1 / 24))
+                    print("sum of differences ", sum_of_differences)
+            ##########
+            print(tomb)
+            
+
+            # print("first moment 1: ", first_moment)
+            # print("first moment 2: ", sum_of_25 * (1 / 25))
+            # print("difference of first moments: ", first_moment - sum_of_25 * (1 / 25))
+            # print("second moment 1: ", second_moment)
+            # print("second moment 2: ", sum_of_differences * (1 / 24))
+            # print("difference of second moments: ", second_moment - sum_of_differences * (1 / 24))
             hipothesis_first = first_moment - sum_of_25 * (1 / 25)
             hipothesis_second = second_moment - sum_of_differences * (1 / 24)
             if abs(hipothesis_first) <= treshold_first:
@@ -406,10 +428,26 @@ def non_local_fast(img, sigma, kernelsize):
                 print("nem okes second moment alapjan")
             first_moment = sum_of_25 * (1 / 25)
             second_moment = sum_of_differences * (1 / 24)
+            """
 
     noisy = np.uint8(noisy)
     print('Filter applied!\n')
     return noisy
+
+
+# imnoise a vizsgalt kep, i es j pedig az aktualis pixel
+def get_5x5_kernel(imnoise, i, j):
+    kernel = [imnoise[i - 2, j - 2], imnoise[i - 2, j - 1], imnoise[i - 2, j], imnoise[i - 1, j - 2],
+              imnoise[i - 1, j - 1],
+              imnoise[i, j - 2], imnoise[i, j - 1], imnoise[i, j],
+              imnoise[i - 2, j + 1], imnoise[i - 2, j + 2], imnoise[i - 1, j], imnoise[i - 1, j + 1],
+              imnoise[i - 1, j + 2],
+              imnoise[i, j + 1], imnoise[i, j + 2], imnoise[i + 1, j - 2],
+              imnoise[i + 1, j + 1], imnoise[i + 2, j - 2], imnoise[i + 2, j - 1], imnoise[i + 2, j],
+              imnoise[i + 1, j], imnoise[i + 1, j + 2], imnoise[i + 2, j],
+              imnoise[i + 2, j + 1], imnoise[i + 2, j + 2]]
+    # print(len(kernel))
+    return kernel
 
 
 window()
