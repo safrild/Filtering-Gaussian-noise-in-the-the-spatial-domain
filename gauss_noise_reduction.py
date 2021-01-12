@@ -32,7 +32,7 @@ def window():
     layout.addWidget(label1)
     comboBoxAlgorithm = QtWidgets.QComboBox(win)
     comboBoxAlgorithm.addItems(
-        ["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method NEW", "SUSAN",
+        ["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method NEW", "Bilateral",
          "Non-local fast"])
     layout.addWidget(comboBoxAlgorithm)
     label2 = QtWidgets.QLabel(win)
@@ -77,7 +77,7 @@ def window():
             comboBoxKernel.addItem("5x5")
         else:
             comboBoxKernel.addItems(kernels)
-        if comboBoxAlgorithm.currentText() == "SUSAN":
+        if comboBoxAlgorithm.currentText() == "Bilateral":
             label5.show()
             comboBoxR.show()
             label4.hide()
@@ -108,8 +108,8 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelSize, r):
         final = gradient_inverse_weighted(images[inputphoto], sigma, kernels[kernelSize])
     elif algorithm == "Sigma":
         final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelSize])
-    elif algorithm == "SUSAN":
-        final = susan(images[inputphoto], sigma, radiuses[r])
+    elif algorithm == "Bilateral":
+        final = bilateral(images[inputphoto], sigma, radiuses[r])
     elif algorithm == "Gradient inverse weighted method NEW":
         final = GIW_new(images[inputphoto], sigma, kernels[kernelSize])
     elif algorithm == "Non-local fast":
@@ -276,10 +276,11 @@ def sigmaAlgorithm(img, sigma, kernelsize):
     return noisy
 
 
-def susan(img, sigma, r):
+def bil(img, sigma, r):
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
     imnoise = border_padding(noisy, 1)
+
     imnoise = np.float32(imnoise)
     rows, cols = noisy.shape
     print('Applying the filter...')
@@ -318,6 +319,54 @@ def susan(img, sigma, r):
 
             noisy[i, j] = finalValue
 
+    print('Filter applied!\n')
+    return noisy
+
+
+def bilateral(img, sigma, r):
+    image = img.copy()
+    noisy = gaussian_noise(image, sigma)
+    # cv2.imshow("nojzi", noisy)
+    imnoise = border_padding(noisy, 1)
+    imnoise = np.float32(imnoise)
+    # cv2.imshow("imnojz", imnoise)
+
+    noisy = np.float32(noisy)
+
+    spatial_szigma = len(np.diagonal(imnoise)) * 0.02
+    print("Spatial szigma legyen az atlo hosszanak 2%-a: ", spatial_szigma)
+    # TODO: mi alapjan hatarozzuk meg a range szigmat?
+    range_szigma = 0.04
+    weight = 0
+
+    rows, cols = noisy.shape
+    print('Applying the filter...')
+
+    for i in range(1, rows + 1):
+        for j in range(1, cols + 1):
+            summa = 0
+            for k in range(1, rows + 1):
+                for l in range(1, cols + 1):
+                    # space weight
+                    # azt hiszem, igy vektorkent ertelmezi majd es a ket vektor normajat szamolja ki, ami az euklideszi tavolsaguk
+                    space_weight = round(spatial_szigma * cv2.norm((i, j), (k, l)), 5)
+                    # range weight
+                    range_weight = round(range_szigma * np.absolute(imnoise[i, j] - imnoise[k, l]), 5)
+
+                    # osszeszorozzuk ezt a ket erteket a pixelintenzitassal
+                    result_of_multiplying = round((space_weight * range_weight * imnoise[k, l]), 5)
+
+                    summa = round((summa + result_of_multiplying), 5)
+
+                    # suly kiszamitasa a normalizalashoz
+                    weight = np.exp(-((((i - k) ** 2) + ((j - l) ** 2)) / 2 * spatial_szigma ** 2)
+                                    - (((np.linalg.norm(imnoise[i, j] - imnoise[k, l])) ** 2) / 2 * range_szigma ** 2))
+                    normalized_weight = imnoise[k, l] * weight / weight
+                    # print(round(normalized_weight, 5))
+                    # a pixel uj erteke
+                    if summa != 0 and weight != 0 and normalized_weight != 0:
+                        noisy[i - 1, j - 1] = (1 / normalized_weight) * summa
+    noisy = np.uint8(noisy)
     print('Filter applied!\n')
     return noisy
 
@@ -364,75 +413,58 @@ def GIW_new(img, sigma, kernelsize):
 
 
 def non_local_fast(img, sigma, kernelsize):
+    #########
+    f = open("valami.txt", "a")
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
-    imnoise = border_padding(noisy, 12)
-    noisy = np.float32(noisy)
+    imnoise = border_padding(noisy, 2)
     imnoise = np.float32(imnoise)
     rows, cols = noisy.shape
+    # creating the weight matrix
+    weight_matrix_initial = np.ones(rows * cols)
     print('Applying the filter...')
     treshold_first = (math.sqrt(2) * sigma) / 5
     treshold_second = np.std(imnoise)
     # treshold_second = math.sqrt((1 / ((rows * cols) - 1)))
     # first_moment = 0
     # second_moment = 0
-    for i in range(1, rows):
-        for j in range(1, cols):
+    for i in range(2, rows):
+        for j in range(2, cols):
+            ############
+            counter = i * rows + j
             # First statistical moment: sum
             sum_of_25 = 0
             # Second statistical moment: sum of values - first moment
             sum_of_differences = 0
             ############################
             kernel = get_5x5_kernel(imnoise, i, j)
-            print("Ez a kezdeti kernel most: ", kernel)
-            for k in range(1, rows):
-                for m in range(1, cols):
+            # print("Ez a kezdeti kernel most: ", kernel)
+            # MENNYI LEGYEN A H????
+            h = sigma
+            for k in range(2, rows):
+                for m in range(2, cols):
                     non_linear_kernel = get_5x5_kernel(imnoise, k, m)
-                    print("Ezt kell kivonni belole vagymi: ", non_linear_kernel)
+                    # print("Ezekkel kell euklideszi tavolsagokat szamolni: ", non_linear_kernel)
                     distances = np.array([])
                     for n in range(0, 25):
+                        # kiszamoljuk egyesevel az euklideszi tavolsagokat az 5x5-os szomszedsagok kozott
                         euclidean_distance = np.linalg.norm(kernel[n] - non_linear_kernel[n])
+                        # a tavolsagokat belerakjuk egy kernelbe
                         distances = np.append(distances, euclidean_distance)
-                    print("Tavolsagok: ", distances)
+                        # kiszamoljuk a valos sulyt
+                        weight_value = np.exp(- (distances[n] / (h ** 2)))
+                        # print(n, " ", round(weight_value, 5))
+                        weight_matrix_initial = np.append(weight_matrix_initial, round(weight_value, 5))
+                    # print("Tavolsagok: ", distances)
+                    # f.write("Matrix:")
+                    # with np.printoptions(threshold=np.inf):
+                    # f.write(np.str(weight_matrix_initial))
+            noisy[i - 2, j - 2] = (imnoise[i, j] * weight_matrix_initial[counter]) / weight_matrix_initial[counter]
+    # cv2.imshow('matrixi', weight_matrix_initial)
 
-            """
-            for k in range(-5, 0):
-                for m in range(-5, 0):
-                    sum_of_25 = sum_of_25 + imnoise[i + k, j + m]
-                    print("sum of 25 is ", sum_of_25)
-                    ################
-                    tomb = np.append(tomb, [imnoise[i + k, j + m]])
-                    print(tomb)
-                    weight_of_current_pixel = np.linalg.norm()
-                    sum_of_differences = sum_of_differences + ((imnoise[i + k, j + m] - first_moment) ** 2)
-                    print("sum of differences ", sum_of_differences)
-            ##########
-            print(tomb)
-            
-
-            # print("first moment 1: ", first_moment)
-            # print("first moment 2: ", sum_of_25 * (1 / 25))
-            # print("difference of first moments: ", first_moment - sum_of_25 * (1 / 25))
-            # print("second moment 1: ", second_moment)
-            # print("second moment 2: ", sum_of_differences * (1 / 24))
-            # print("difference of second moments: ", second_moment - sum_of_differences * (1 / 24))
-            hipothesis_first = first_moment - sum_of_25 * (1 / 25)
-            hipothesis_second = second_moment - sum_of_differences * (1 / 24)
-            if abs(hipothesis_first) <= treshold_first:
-                print("okes first moment alapjan")
-            else:
-                print("nem okes first alapjan")
-            if abs(hipothesis_second) <= treshold_second:
-                print("okes a second moment alapjan")
-            else:
-                print("nem okes second moment alapjan")
-            first_moment = sum_of_25 * (1 / 25)
-            second_moment = sum_of_differences * (1 / 24)
-            """
-
-    noisy = np.uint8(noisy)
+    imnoise = np.uint8(imnoise)
     print('Filter applied!\n')
-    return noisy
+    return imnoise
 
 
 # imnoise a vizsgalt kep, i es j pedig az aktualis pixel
@@ -446,7 +478,6 @@ def get_5x5_kernel(imnoise, i, j):
               imnoise[i + 1, j + 1], imnoise[i + 2, j - 2], imnoise[i + 2, j - 1], imnoise[i + 2, j],
               imnoise[i + 1, j], imnoise[i + 1, j + 2], imnoise[i + 2, j],
               imnoise[i + 2, j + 1], imnoise[i + 2, j + 2]]
-    # print(len(kernel))
     return kernel
 
 
