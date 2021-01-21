@@ -282,40 +282,50 @@ def bilateral(img, sigma, kernelsize):
     rows, cols = imnoise.shape
     print('Applying the filter...')
 
+    # step 2: make gauss kernel
+
     xdir_gauss = cv2.getGaussianKernel(5, 1.0)
     gaussian_kernel = np.multiply(xdir_gauss.T, xdir_gauss)
     print("Kernel: \n", gaussian_kernel)
 
     # legyen 5x5-os kernel most
     kernel_s = 5
+
     for i in range(0, rows + 1):
         for j in range(0, cols + 1):
-            p_value = 0
-            weight = 0
-            m = kernel_s // 2
-            n = kernel_s // 2
+            p_value = 0.0
+            weight = 0.0
+            m = i + kernel_s // 2
+            n = j + kernel_s // 2
 
+            # ha 5x5-os a kernel, akkor ez -2-tol 3-ig fut
             for x in range(-m, m + 1):
                 for y in range(-n, n + 1):
-                    # space weight
-                    space_weight = gaussian_kernel[x, y]
-
                     # range weight
                     # a ket pixel intenzitaskulonbsegenek abszoluterteke?
                     # difference = np.absolute(imnoise[i, j] - imnoise[x, y])
                     # print(difference)
 
-                    difference = np.sqrt((x - i) ** 2 + (y - j) ** 2)
+                    # a ket pixel kozotti tavolsag kiszamitasa
+                    distance = np.sqrt((x - i) ** 2 + (y - j) ** 2)
+
+                    # space weight
+                    space_weight = gaussian_kernel[x + 2, y + 2]
+
                     range_weight = (1.0 / (2 * math.pi * (range_szigma ** 2))) * math.exp(
-                        -(difference ** 2) / (2 * range_szigma ** 2))
+                        -(distance ** 2) / (2 * range_szigma ** 2))
+                    # es itt allandoan 0 ertekek jonnek ki - mert annyira pici lesz?
+                    print(range_weight)
 
                     # osszeszorozzuk ezt a ket sulyerteket a pixelintenzitassal
                     p_value += (space_weight * range_weight * imnoise[x, y])
+                    # print("p values before normalization: ", p_value)
                     weight += (space_weight * range_weight)
+                    # print("suly: ", weight)
 
             # normalize
-            p_value /= weight
-            # print(p_value)
+            p_value = p_value / weight
+            print("p after normalization: ", round(p_value, 1))
             filtered[i, j] = p_value
 
     filtered = np.uint8(filtered)
