@@ -5,6 +5,7 @@ import cv2 as cv2
 import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget
+import matplotlib.pyplot as plt
 
 # kepek beolvasasa es tombbe helyezese
 Lake = cv2.imread('Lake.jpg', cv2.IMREAD_GRAYSCALE)
@@ -31,7 +32,8 @@ def window():
     layout.addWidget(label1)
     comboBoxAlgorithm = QtWidgets.QComboBox(win)
     comboBoxAlgorithm.addItems(
-        ["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method NEW", "Bilateral"])
+        ["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method NEW", "Bilateral",
+         "Bilateral constant time"])
     layout.addWidget(comboBoxAlgorithm)
     label2 = QtWidgets.QLabel(win)
     label2.setText("Sigma value: ")
@@ -104,6 +106,8 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize):
         final = bilateral(images[inputphoto], sigma, kernels[kernelsize])
     elif algorithm == "Gradient inverse weighted method NEW":
         final = GIW_new(images[inputphoto], sigma, kernels[kernelsize])
+    elif algorithm == "Bilateral constant time":
+        final = constant_time_bilateral(images[inputphoto], sigma)
     cv2.imshow('Image after denoising', final)
 
 
@@ -265,6 +269,7 @@ def bilateral(img, sigma, kernelsize):
     image = img.copy()
     imnoise = gaussian_noise(image, sigma)
     filtered = np.zeros([imnoise.shape[0], imnoise.shape[1]])
+    imnoise = border_padding(imnoise, 2)
     imnoise = np.float32(imnoise)
     filtered = np.float32(filtered)
 
@@ -292,8 +297,8 @@ def bilateral(img, sigma, kernelsize):
     # legyen 5x5-os kernel most
     kernel_s = 5
 
-    for i in range(2, rows - 3):
-        for j in range(2, cols - 3):
+    for i in range(2, rows - 2):
+        for j in range(2, cols - 2):
             # print("i: ", i, "j: ", j)
 
             p_value = 0.0
@@ -320,10 +325,19 @@ def bilateral(img, sigma, kernelsize):
             # normalizaljuk a p erteket
             # print("weight: ", weight)
             p_value = p_value / weight
-            filtered[i, j] = p_value
+            filtered[i - 2, j - 2] = p_value
 
     filtered = np.uint8(filtered)
     return filtered
+
+
+def constant_time_bilateral(img, sigma):
+    image = img.copy()
+    imnoise = gaussian_noise(image, sigma)
+    h = cv2.calcHist(imnoise, [0], None, [256], [0, 256])
+    plt.hist(imnoise.ravel(), 256, [0, 256])
+    plt.show()
+    return imnoise
 
 
 def GIW_new(img, sigma, kernelsize):
