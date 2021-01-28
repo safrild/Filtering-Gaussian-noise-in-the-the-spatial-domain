@@ -1,8 +1,6 @@
 import math
 import statistics
 import sys
-import scipy.stats as st
-
 import cv2 as cv2
 import numpy as np
 from PyQt5 import QtWidgets
@@ -275,16 +273,18 @@ def bilateral(img, sigma, kernelsize):
     spatial_szigma = len(np.diagonal(imnoise)) * 0.02
     print("Spatial szigma legyen az atlo hosszanak 2%-a: ", spatial_szigma)
 
-    # mi alapjan hatarozzuk meg a range szigmat?
-    range_szigma = 1.5
+    # TODO: allithato range szigma
+    range_szigma = 50
     print("Range szigma: ", range_szigma)
+
+    # A range_szigma csökkentése mellett erősödik a szűrő élmegőrző jellege
+    # a space_szigma növelésével pedig erősödik a szűrő simító hatása.
 
     rows, cols = imnoise.shape
     print('Applying the filter...')
 
     # step 2: make gauss kernel
 
-    # TODO: kernel radius = 3 * sigma_spatial ???
     xdir_gauss = cv2.getGaussianKernel(5, 1.0)
     gaussian_kernel = np.multiply(xdir_gauss.T, xdir_gauss)
     print("Kernel: \n", gaussian_kernel)
@@ -306,31 +306,21 @@ def bilateral(img, sigma, kernelsize):
             for x in range(i - m, i + m + 1):
                 for y in range(j - n, j + n + 1):
                     # print("x: ", x, "y: ", y)
-                    # a ket pixel kozotti tavolsag kiszamitasa
-                    # distance = np.sqrt((x - i) ** 2 + (y - j) ** 2)
 
                     # space weight
-                    space_weight = gaussian_kernel[x + 2, y + 2]
-                    # space_weight = 1.0
+                    space_weight = gaussian_kernel[x - i + 2, y - j + 2]
 
                     # range weight
-                    range_weight = (1.0 / np.sqrt(2 * math.pi * (range_szigma ** 2))) * (
-                        math.exp((-(imnoise[i, j] - imnoise[x, y]) ** 2) / (2 * range_szigma ** 2)))
-                    # range_weight = 1.0
-                    print("range weight: ", range_weight)
+                    range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_szigma ** 2)))
 
                     # osszeszorozzuk ezt a ket sulyerteket a pixelintenzitassal es hozzaadjuk a p ertekehez
                     p_value += (space_weight * range_weight * imnoise[x, y])
-                    print("p value before normalization: ", p_value)
                     weight += (space_weight * range_weight)
-                    print("weight: ", weight)
 
             # normalizaljuk a p erteket
             # print("weight: ", weight)
             p_value = p_value / weight
-            print("p after normalization: ", round(p_value, 1))
             filtered[i, j] = p_value
-            # print("test")
 
     filtered = np.uint8(filtered)
     return filtered
