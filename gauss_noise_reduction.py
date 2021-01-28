@@ -18,6 +18,12 @@ kernels = {"3x3": 1,
            "5x5 (time consuming)": 2}
 radiuses = {"1": 1,
             "2": 2}
+range_sigmas = {"10": 10,
+                "20": 20,
+                "40": 40,
+                "60": 60,
+                "80": 80,
+                "100": 100}
 
 
 def window():
@@ -27,6 +33,7 @@ def window():
     win.setGeometry(200, 200, 300, 300)
     win.setWindowTitle("Menu")
     layout = QVBoxLayout()
+    # algorithm chooser
     label1 = QtWidgets.QLabel()
     label1.setText("Algorithm: ")
     layout.addWidget(label1)
@@ -35,24 +42,28 @@ def window():
         ["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method NEW", "Bilateral",
          "Bilateral constant time"])
     layout.addWidget(comboBoxAlgorithm)
+    # Sigma a zajosításhoz
     label2 = QtWidgets.QLabel(win)
     label2.setText("Sigma value: ")
     layout.addWidget(label2)
     comboBoxSigma = QtWidgets.QComboBox(win)
     comboBoxSigma.addItems(["20", "40", "80"])
     layout.addWidget(comboBoxSigma)
+    # Kernel size
     label4 = QtWidgets.QLabel(win)
     label4.setText("Kernel size: ")
     layout.addWidget(label4)
     comboBoxKernel = QtWidgets.QComboBox(win)
     comboBoxKernel.addItems(kernels)
     layout.addWidget(comboBoxKernel)
+    # input photo
     label3 = QtWidgets.QLabel(win)
     label3.setText("Input photo: ")
     layout.addWidget(label3)
     comboBoxInput = QtWidgets.QComboBox(win)
     comboBoxInput.addItems(images)
     layout.addWidget(comboBoxInput)
+    # radius
     label5 = QtWidgets.QLabel(win)
     label5.setText("Radius: ")
     layout.addWidget(label5)
@@ -61,6 +72,16 @@ def window():
     comboBoxR.addItems(radiuses)
     layout.addWidget(comboBoxR)
     comboBoxR.hide()
+    # range sigma
+    label6 = QtWidgets.QLabel(win)
+    label6.setText("Range sigma: ")
+    layout.addWidget(label6)
+    label6.hide()
+    comboBoxRangeSigma = QtWidgets.QComboBox(win)
+    comboBoxRangeSigma.addItems(range_sigmas)
+    layout.addWidget(comboBoxRangeSigma)
+    comboBoxRangeSigma.hide()
+    # run button
     btnRun = QtWidgets.QPushButton(win)
     btnRun.setText("Run algorithm")
     btnRun.setCheckable(True)
@@ -73,8 +94,14 @@ def window():
         comboBoxR.hide()
         label4.show()
         comboBoxKernel.show()
+        label6.hide()
+        comboBoxRangeSigma.hide()
         if comboBoxAlgorithm.currentText() == "Kuwahara":
-            comboBoxKernel.addItem("5x5")
+            comboBoxKernel.addItem("5x5 (time consuming)")
+        elif comboBoxAlgorithm.currentText() == "Bilateral":
+            comboBoxKernel.addItem("5x5 (time consuming)")
+            label6.show()
+            comboBoxRangeSigma.show()
         else:
             comboBoxKernel.addItems(kernels)
 
@@ -82,12 +109,13 @@ def window():
     win.show()
 
     btnRun.clicked.connect(lambda: call_algorithm(comboBoxAlgorithm.currentText(), comboBoxSigma.currentText(),
-                                                  comboBoxInput.currentText(), comboBoxKernel.currentText()))
+                                                  comboBoxInput.currentText(), comboBoxKernel.currentText(),
+                                                  comboBoxRangeSigma.currentText()))
 
     sys.exit(app.exec_())
 
 
-def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize):
+def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmaparam):
     global final
     print("\n")
     print(algorithm)
@@ -96,6 +124,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize):
     print(kernels[kernelsize])
     print("\n")
     sigma = int(sigmaparam)
+    range_sigma = int(range_sigmas[range_sigmaparam])
     if algorithm == "Kuwahara":
         final = kuwahara(images[inputphoto], sigma)
     elif algorithm == "Gradient inverse weighted method":
@@ -103,7 +132,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize):
     elif algorithm == "Sigma":
         final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelsize])
     elif algorithm == "Bilateral":
-        final = bilateral(images[inputphoto], sigma, kernels[kernelsize])
+        final = bilateral(images[inputphoto], sigma, kernels[kernelsize], range_sigma)
     elif algorithm == "Gradient inverse weighted method NEW":
         final = GIW_new(images[inputphoto], sigma, kernels[kernelsize])
     elif algorithm == "Bilateral constant time":
@@ -265,7 +294,7 @@ def sigmaAlgorithm(img, sigma, kernelsize):
     return noisy
 
 
-def bilateral(img, sigma, kernelsize):
+def bilateral(img, sigma, kernelsize, range_sigma):
     image = img.copy()
     imnoise = gaussian_noise(image, sigma)
     filtered = np.zeros([imnoise.shape[0], imnoise.shape[1]])
