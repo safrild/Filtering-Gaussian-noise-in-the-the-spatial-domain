@@ -145,7 +145,7 @@ def window():
     sys.exit(app.exec_())
 
 
-def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmaparam, space_sigmaparam, repeatGIW):
+def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmaparam, space_sigmaparam, giw_repeat_times):
     global final
     print("\n")
     print(algorithm)
@@ -165,9 +165,9 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
         final = bilateral(images[inputphoto], sigma, kernels[kernelsize], range_sigma,
                           space_sigmaparam)
     elif algorithm == "Gradient inverse weighted method NEW":
-        if repeatGIW == "1":
+        if giw_repeat_times == "1":
             final = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
-        elif repeatGIW == "2":
+        elif giw_repeat_times == "2":
             first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
             final = GIW_new(first, sigma, kernels[kernelsize], True)
         else:
