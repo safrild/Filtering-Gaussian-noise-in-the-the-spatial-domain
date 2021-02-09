@@ -91,6 +91,15 @@ def window():
     sliderSpaceSigma.setValue(40)
     layout.addWidget(sliderSpaceSigma)
     sliderSpaceSigma.hide()
+    # GIW_new tobbszori alkalmazas
+    label8 = QtWidgets.QLabel(win)
+    label8.setText("Repeat times: ")
+    label8.hide()
+    layout.addWidget(label8)
+    comboBoxGIWRepeat = QtWidgets.QComboBox(win)
+    comboBoxGIWRepeat.addItems(["1", "2", "3"])
+    layout.addWidget(comboBoxGIWRepeat)
+    comboBoxGIWRepeat.hide()
     # run button
     btnRun = QtWidgets.QPushButton(win)
     btnRun.setText("Run algorithm")
@@ -108,6 +117,8 @@ def window():
         sliderRangeSigma.hide()
         label7.hide()
         sliderSpaceSigma.hide()
+        label8.hide()
+        comboBoxGIWRepeat.hide()
         if comboBoxAlgorithm.currentText() == "Kuwahara":
             comboBoxKernel.addItem("5x5 (time consuming)")
         elif comboBoxAlgorithm.currentText() == "Bilateral":
@@ -116,6 +127,10 @@ def window():
             sliderRangeSigma.show()
             label7.show()
             sliderSpaceSigma.show()
+        elif comboBoxAlgorithm.currentText() == "Gradient inverse weighted method NEW":
+            comboBoxKernel.addItems(kernels)
+            label8.show()
+            comboBoxGIWRepeat.show()
         else:
             comboBoxKernel.addItems(kernels)
 
@@ -125,12 +140,12 @@ def window():
     btnRun.clicked.connect(
         lambda: call_algorithm(comboBoxAlgorithm.currentText(), comboBoxSigma.currentText(),
                                comboBoxInput.currentText(), comboBoxKernel.currentText(),
-                               sliderRangeSigma.value(), sliderSpaceSigma.value()))
+                               sliderRangeSigma.value(), sliderSpaceSigma.value(), comboBoxGIWRepeat.currentText()))
 
     sys.exit(app.exec_())
 
 
-def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmaparam, space_sigmaparam):
+def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmaparam, space_sigmaparam, repeatGIW):
     global final
     print("\n")
     print(algorithm)
@@ -150,7 +165,15 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
         final = bilateral(images[inputphoto], sigma, kernels[kernelsize], range_sigma,
                           space_sigmaparam)
     elif algorithm == "Gradient inverse weighted method NEW":
-        final = GIW_new(images[inputphoto], sigma, kernels[kernelsize])
+        if repeatGIW == "1":
+            final = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
+        elif repeatGIW == "2":
+            first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
+            final = GIW_new(first, sigma, kernels[kernelsize], True)
+        else:
+            first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
+            second = GIW_new(first, sigma, kernels[kernelsize], True)
+            final = GIW_new(second, sigma, kernels[kernelsize], True)
     elif algorithm == "Bilateral constant time":
         final = constant_time_bilateral(images[inputphoto], sigma)
     cv2.imshow('Image after denoising', final)

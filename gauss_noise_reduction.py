@@ -381,10 +381,14 @@ def SHcomp(Ig, ws, BinN=11):
     return sh_mtx
 
 
-def GIW_new(img, sigma, kernelsize):
+def GIW_new(img, sigma, kernelsize, isrepeat):
     image = img.copy()
-    noisy = gaussian_noise(image, sigma)
-    imnoise = border_padding(noisy, 1)
+    if not isrepeat:
+        noisy = gaussian_noise(image, sigma)
+        imnoise = border_padding(noisy, 1)
+    else:
+        noisy = image
+        imnoise = noisy
     noisy = np.float32(noisy)
     imnoise = np.float32(imnoise)
     rows, cols = noisy.shape
