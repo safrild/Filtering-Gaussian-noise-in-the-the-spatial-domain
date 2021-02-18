@@ -1,7 +1,11 @@
 import math
 import statistics
+import sys
+
 import cv2 as cv2
 import numpy as np
+
+np.set_printoptions(threshold=sys.maxsize)
 
 
 # ezzel a fuggvennyel toltjuk ki a kepszeleket zajszures elott "kiterjesztessel"
@@ -181,7 +185,7 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
 
     # step 2: make gauss kernel
 
-    xdir_gauss = cv2.getGaussianKernel(5, 1.0)
+    xdir_gauss = cv2.getGaussianKernel(5, space_sigma)
     gaussian_kernel = np.multiply(xdir_gauss.T, xdir_gauss)
     print("Kernel: \n", gaussian_kernel)
 
@@ -219,6 +223,7 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
             filtered[i - 2, j - 2] = p_value
 
     filtered = np.uint8(filtered)
+    print('Filter applied!\n')
     return filtered
 
 
@@ -230,29 +235,29 @@ def constant_time_bilateral(img, sigma):
     imnoise = np.float32(imnoise)
     filtered = np.float32(filtered)
 
-    print(LH(image, 2, 256, image.shape[0], image.shape[1]))
+    print(sum(SHcomp(image, 2, 256)[1][1]))
 
     # h = cv2.calcHist(imnoise, [0], None, [256], [0, 256])
     # plt.hist(imnoise.ravel(), 256, [0, 256])
     # plt.show()
 
     spatial_szigma = 1
-    print("Spatial szigma konstans 1 ertek: ", spatial_szigma)
+    #print("Spatial szigma konstans 1 ertek: ", spatial_szigma)
 
     range_szigma = 50
-    print("Range szigma: ", range_szigma)
+    #print("Range szigma: ", range_szigma)
 
     # A range_szigma csökkentése mellett erősödik a szűrő élmegőrző jellege
     # a space_szigma növelésével pedig erősödik a szűrő simító hatása.
 
     rows, cols = imnoise.shape
-    print('Applying the filter...')
+    #print('Applying the filter...')
 
     # step 2: make gauss kernel
 
     xdir_gauss = cv2.getGaussianKernel(5, 1.0)
     gaussian_kernel = np.multiply(xdir_gauss.T, xdir_gauss)
-    print("Kernel: \n", gaussian_kernel)
+    #print("Kernel: \n", gaussian_kernel)
 
     # legyen 5x5-os kernel most
     kernel_s = 5
@@ -288,6 +293,7 @@ def constant_time_bilateral(img, sigma):
             filtered[i - 2, j - 2] = p_value
 
     filtered = np.uint8(filtered)
+    print('Filter applied!\n')
     return filtered
 
 
@@ -368,15 +374,23 @@ def SHcomp(Ig, ws, BinN=11):
     integral_hist_pad = np.concatenate([padding_t, integral_hist_pad_tmp, padding_b], axis=0)
 
     integral_hist_1 = integral_hist_pad[ws + 1 + ws:, ws + 1 + ws:, :]
+    # print(integral_hist_1)
     integral_hist_2 = integral_hist_pad[:-ws - ws - 1, :-ws - ws - 1, :]
+    # print(integral_hist_2)
     integral_hist_3 = integral_hist_pad[ws + 1 + ws:, :-ws - ws - 1, :]
+    # print(integral_hist_3)
     integral_hist_4 = integral_hist_pad[:-ws - ws - 1, ws + 1 + ws:, :]
+    # print(integral_hist_4)
 
     sh_mtx = integral_hist_1 + integral_hist_2 - integral_hist_3 - integral_hist_4
+    # return sh_mtx
 
+    # szazalekos eloszlas szamitasa
     histsum = np.sum(sh_mtx, axis=-1, keepdims=True)
+    # print(histsum)
 
     sh_mtx = np.float32(sh_mtx) / np.float32(histsum)
+    # print(sh_mtx)
 
     return sh_mtx
 

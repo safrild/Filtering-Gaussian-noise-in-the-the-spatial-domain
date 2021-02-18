@@ -8,7 +8,9 @@ from gauss_noise_reduction import *
 Lake = cv2.imread('Lake.jpg', cv2.IMREAD_GRAYSCALE)
 Tower = cv2.imread('Tower.jpg', cv2.IMREAD_GRAYSCALE)
 Wall = cv2.imread('Wall.jpg', cv2.IMREAD_GRAYSCALE)
+Lake256 = cv2.imread('Lake_256.jpg', cv2.IMREAD_GRAYSCALE)
 images = {"Lake": Lake,
+          "Lake256": Lake256,
           "Tower": Tower,
           "Wall": Wall}
 kernels = {"3x3": 1,
@@ -75,7 +77,7 @@ def window():
     layout.addWidget(label6)
     label6.hide()
     sliderRangeSigma = QtWidgets.QSlider(Qt.Horizontal)
-    sliderRangeSigma.setMinimum(10)
+    sliderRangeSigma.setMinimum(0)
     sliderRangeSigma.setMaximum(100)
     sliderRangeSigma.setValue(40)
     layout.addWidget(sliderRangeSigma)
@@ -86,7 +88,7 @@ def window():
     layout.addWidget(label7)
     label7.hide()
     sliderSpaceSigma = QtWidgets.QSlider(Qt.Horizontal)
-    sliderSpaceSigma.setMinimum(10)
+    sliderSpaceSigma.setMinimum(0)
     sliderSpaceSigma.setMaximum(100)
     sliderSpaceSigma.setValue(40)
     layout.addWidget(sliderSpaceSigma)
