@@ -235,29 +235,14 @@ def constant_time_bilateral(img, sigma):
     imnoise = np.float32(imnoise)
     filtered = np.float32(filtered)
 
-    print(sum(SHcomp(image, 2, 256)[1][1]))
-
-    # h = cv2.calcHist(imnoise, [0], None, [256], [0, 256])
-    # plt.hist(imnoise.ravel(), 256, [0, 256])
-    # plt.show()
-
-    spatial_szigma = 1
-    #print("Spatial szigma konstans 1 ertek: ", spatial_szigma)
+    integral_histogram = SHcomp(imnoise, 2, 256)
+    # print(integral_histogram)
 
     range_szigma = 50
-    #print("Range szigma: ", range_szigma)
-
-    # A range_szigma csökkentése mellett erősödik a szűrő élmegőrző jellege
-    # a space_szigma növelésével pedig erősödik a szűrő simító hatása.
+    # print("Range szigma: ", range_szigma)
 
     rows, cols = imnoise.shape
-    #print('Applying the filter...')
-
-    # step 2: make gauss kernel
-
-    xdir_gauss = cv2.getGaussianKernel(5, 1.0)
-    gaussian_kernel = np.multiply(xdir_gauss.T, xdir_gauss)
-    #print("Kernel: \n", gaussian_kernel)
+    # print('Applying the filter...')
 
     # legyen 5x5-os kernel most
     kernel_s = 5
@@ -268,24 +253,33 @@ def constant_time_bilateral(img, sigma):
 
             p_value = 0.0
             weight = 0.0
+            szorzat = 0.0
+            intenzitas_darabszam_dict = {}
 
             m = kernel_s // 2
             n = kernel_s // 2
 
+            print(integral_histogram[i][j])
+
             # ha 5x5-os a kernel, akkor ez -2-tol 2-ig fut
             for x in range(i - m, i + m + 1):
                 for y in range(j - n, j + n + 1):
-                    # print("x: ", x, "y: ", y)
+                    aktualis_intenzitasertek = imnoise[x, y].astype(int)
+                    print("Aktualisan vizsgalt intenzitas: ", aktualis_intenzitasertek)
 
-                    # space weight
-                    space_weight = gaussian_kernel[x - i + 2, y - j + 2]
+                    aktualis_intenzitasertek_darabszama = integral_histogram[i][j][aktualis_intenzitasertek]
+                    print("Darabszam: ", aktualis_intenzitasertek_darabszama)
+
+                    intenzitas_darabszam_dict[aktualis_intenzitasertek] = aktualis_intenzitasertek_darabszama
+                    # print(intenzitas_darabszam_dict)
 
                     # range weight
                     range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_szigma ** 2)))
 
+                    integral_histogram_weight = 1
                     # osszeszorozzuk ezt a ket sulyerteket a pixelintenzitassal es hozzaadjuk a p ertekehez
-                    p_value += (space_weight * range_weight * imnoise[x, y])
-                    weight += (space_weight * range_weight)
+                    p_value += (integral_histogram_weight * range_weight * imnoise[x, y])
+                    weight += (integral_histogram_weight * range_weight)
 
             # normalizaljuk a p erteket
             # print("weight: ", weight)
@@ -295,36 +289,6 @@ def constant_time_bilateral(img, sigma):
     filtered = np.uint8(filtered)
     print('Filter applied!\n')
     return filtered
-
-
-def LH(Ig, ws, no_bins, nrows, ncols, integral_hist=None):
-    h = Ig.shape[1]
-    # assign bin ids
-    bin_width = 255. / no_bins
-    I_bin_id = np.floor(Ig / bin_width)
-    # one hot encoding
-    one_hot_pix = np.zeros((nrows * ncols, no_bins))
-    one_hot_pix[np.arange(nrows * ncols), I_bin_id.flatten()] = 1
-    one_hot_pix = one_hot_pix.reshape((nrows, ncols, no_bins))
-
-    np.cumsum(one_hot_pix, axis=1, out=integral_hist)  # left to right
-    np.cumsum(integral_hist, axis=0, out=integral_hist)  # top to bottom
-
-    # pad integral histogram array
-    padding_left = np.zeros((h, ws + 1, no_bins))
-    padding_right = np.tile(integral_hist[:, -1:, :], (1, ws, 1))
-    integral_hist_pad = np.concatenate([padding_left, integral_hist, padding_right], axis=1)
-    padding_top = np.zeros((ws + 1, integral_hist_pad.shape[1], no_bins))
-    padding_bottom = np.tile(integral_hist_pad[-1:, :, :], (ws, 1, 1))
-    integral_hist_pad = np.concatenate([padding_top, integral_hist_pad, padding_bottom], axis=0)
-    # find sub-arrays of four corners
-    integral_hist_1 = integral_hist_pad[:-ws - ws - 1, :-ws - ws - 1, :]
-    integral_hist_2 = integral_hist_pad[:-ws - ws - 1, ws + 1 + ws:, :]
-    integral_hist_3 = integral_hist_pad[ws + 1 + ws:, :-ws - ws - 1, :]
-    integral_hist_4 = integral_hist_pad[ws + 1 + ws:, ws + 1 + ws:, :]
-    local_hist = integral_hist_4 + integral_hist_1 - integral_hist_2 - integral_hist_3
-
-    return local_hist
 
 
 def SHcomp(Ig, ws, BinN=11):
@@ -386,10 +350,10 @@ def SHcomp(Ig, ws, BinN=11):
     # return sh_mtx
 
     # szazalekos eloszlas szamitasa
-    histsum = np.sum(sh_mtx, axis=-1, keepdims=True)
+    # histsum = np.sum(sh_mtx, axis=-1, keepdims=True)
     # print(histsum)
 
-    sh_mtx = np.float32(sh_mtx) / np.float32(histsum)
+    # sh_mtx = np.float32(sh_mtx) / np.float32(histsum)
     # print(sh_mtx)
 
     return sh_mtx
