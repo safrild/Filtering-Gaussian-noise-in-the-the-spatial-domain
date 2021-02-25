@@ -251,24 +251,24 @@ def constant_time_bilateral(img, sigma):
         for j in range(2, cols - 2):
             # print("i: ", i, "j: ", j)
 
-            p_value = 0.0
             weight = 0.0
             szorzat = 0.0
+            normalizalashoz = 0.0
             intenzitas_darabszam_dict = {}
 
             m = kernel_s // 2
             n = kernel_s // 2
 
-            print(integral_histogram[i][j])
+            # print(integral_histogram[i][j])
 
             # ha 5x5-os a kernel, akkor ez -2-tol 2-ig fut
             for x in range(i - m, i + m + 1):
                 for y in range(j - n, j + n + 1):
                     aktualis_intenzitasertek = imnoise[x, y].astype(int)
-                    print("Aktualisan vizsgalt intenzitas: ", aktualis_intenzitasertek)
+                    # print("Aktualisan vizsgalt intenzitas: ", aktualis_intenzitasertek)
 
                     aktualis_intenzitasertek_darabszama = integral_histogram[i][j][aktualis_intenzitasertek]
-                    print("Darabszam: ", aktualis_intenzitasertek_darabszama)
+                    # print("Darabszam: ", aktualis_intenzitasertek_darabszama)
 
                     intenzitas_darabszam_dict[aktualis_intenzitasertek] = aktualis_intenzitasertek_darabszama
                     # print(intenzitas_darabszam_dict)
@@ -276,15 +276,16 @@ def constant_time_bilateral(img, sigma):
                     # range weight
                     range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_szigma ** 2)))
 
-                    integral_histogram_weight = 1
-                    # osszeszorozzuk ezt a ket sulyerteket a pixelintenzitassal es hozzaadjuk a p ertekehez
-                    p_value += (integral_histogram_weight * range_weight * imnoise[x, y])
-                    weight += (integral_histogram_weight * range_weight)
+                    szorzat = intenzitas_darabszam_dict[
+                                  aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight
+
+                    normalizalashoz += (szorzat * imnoise[x, y])
+                    weight += szorzat
 
             # normalizaljuk a p erteket
             # print("weight: ", weight)
-            p_value = p_value / weight
-            filtered[i - 2, j - 2] = p_value
+            suly = normalizalashoz / weight
+            filtered[i - 2, j - 2] = suly
 
     filtered = np.uint8(filtered)
     print('Filter applied!\n')
