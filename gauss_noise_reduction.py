@@ -252,7 +252,6 @@ def constant_time_bilateral(img, sigma):
             # print("i: ", i, "j: ", j)
 
             weight = 0.0
-            szorzat = 0.0
             normalizalashoz = 0.0
             intenzitas_darabszam_dict = {}
 
@@ -273,17 +272,17 @@ def constant_time_bilateral(img, sigma):
                     intenzitas_darabszam_dict[aktualis_intenzitasertek] = aktualis_intenzitasertek_darabszama
                     # print(intenzitas_darabszam_dict)
 
-                    # range weight
+                    # Ezzel szamoljuk ki a g-s reszt
                     range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_szigma ** 2)))
 
                     szorzat = intenzitas_darabszam_dict[
                                   aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight
+                    # print(szorzat)
 
                     normalizalashoz += (szorzat * imnoise[x, y])
                     weight += szorzat
 
-            # normalizaljuk a p erteket
-            # print("weight: ", weight)
+            # normalizaljuk a sulyerteket
             suly = normalizalashoz / weight
             filtered[i - 2, j - 2] = suly
 
