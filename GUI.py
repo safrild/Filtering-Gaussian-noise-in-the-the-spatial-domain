@@ -189,7 +189,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
             final = GIW_new(second, sigma, kernels[kernelsize], True)
             cv2.imwrite('giw_new.jpg', final)
     elif algorithm == "Bilateral with integral histogram":
-        final = constant_time_bilateral(images[inputphoto], sigma, kernels[kernelsize])
+        final = new_bilateral(images[inputphoto], sigma, kernels[kernelsize])
         cv2.imwrite('bilateral_constant.jpg', final)
     cv2.imshow('Image after denoising', final)
 

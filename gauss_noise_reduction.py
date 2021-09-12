@@ -197,7 +197,7 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
     return filtered
 
 
-def constant_time_bilateral(img, sigma, kernelsize):
+def new_bilateral(img, sigma, kernelsize):
     image = img.copy()
     imnoise = gaussian_noise(image, sigma)
     filtered = np.zeros([imnoise.shape[0], imnoise.shape[1]])
