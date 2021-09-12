@@ -17,7 +17,7 @@ images = {"Lenna": Lenna,
           "Tower": Tower,
           "Wall": Wall}
 kernels = {"3x3": 1,
-           "5x5 (time consuming)": 2}
+           "5x5 (time consuming)": 3}
 radiuses = {"1": 1,
             "2": 2}
 range_sigmas = {"10": 10,

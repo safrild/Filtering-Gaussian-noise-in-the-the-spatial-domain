@@ -354,16 +354,17 @@ def GIW_new(img, sigma, kernelsize, isrepeat):
     image = img.copy()
     if not isrepeat:
         noisy = gaussian_noise(image, sigma)
-        imnoise = border_padding(noisy, 1)
+        imnoise = border_padding(noisy, kernelsize)
     else:
         noisy = image
         imnoise = noisy
     noisy = np.float32(noisy)
     imnoise = np.float32(imnoise)
+    imnoise = border_padding(imnoise, kernelsize)
     rows, cols = noisy.shape
     print('Applying the filter...')
-    for i in range(1, rows):
-        for j in range(1, cols):
+    for i in range(0, rows):
+        for j in range(0, cols):
             sum_delta = 0
             sum_weight_square = 0
             sum_weight = 0
