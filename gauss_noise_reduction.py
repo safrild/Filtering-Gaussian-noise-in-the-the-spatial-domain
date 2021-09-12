@@ -5,6 +5,8 @@ import sys
 import cv2 as cv2
 import numpy as np
 
+from math import log10, sqrt
+
 np.set_printoptions(threshold=sys.maxsize)
 
 
@@ -29,6 +31,7 @@ def gaussian_noise(img, sigma):
     # Kirajzoljuk a zajjal terhelt kepet
     print('Gaussian noise added!')
     cv2.imshow('Image after noising', imnoise)
+    cv2.imwrite('noised_image.jpg', imnoise)
     return imnoise
 
 
@@ -99,41 +102,6 @@ def kuwahara(img, sigma):
     return noisy
 
 
-def gradient_inverse_weighted(img, sigma, kernelsize):
-    image = img.copy()
-    noisy = gaussian_noise(image, sigma)
-    imnoise = border_padding(noisy, 1)
-    noisy = np.float32(noisy)
-    imnoise = np.float32(imnoise)
-    rows, cols = noisy.shape
-    print('Applying the filter...')
-
-    for i in range(1, rows):
-        for j in range(1, cols):
-            sum_delta = 0
-            sum_weight = 0
-            for k in range(-kernelsize, kernelsize):
-                if k == 0:
-                    continue
-                distance = imnoise[i + k, j + k] - imnoise[i, j]
-                delta = 1 / distance if distance > 0 else 2
-                sum_delta += delta
-
-            for s in range(-kernelsize, kernelsize):
-                if s == 0:
-                    continue
-                distance = imnoise[i + s, j + s] - imnoise[i, j]
-                delta = 1 / distance if distance > 0 else 2
-                weight = delta / sum_delta
-                sum_weight += weight * imnoise[i + s, j + s]
-
-            noisy[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
-
-    noisy = np.uint8(noisy)
-    print('Filter applied!\n')
-    return noisy
-
-
 def sigmaAlgorithm(img, sigma, kernelsize):
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
@@ -157,6 +125,8 @@ def sigmaAlgorithm(img, sigma, kernelsize):
             average = round(sum / count, 4)
             noisy[i, j] = average
     noisy = np.uint8(noisy)
+
+    psnr_function(image, image)
 
     print('Filter applied!\n')
     return noisy
@@ -227,7 +197,7 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
     return filtered
 
 
-def constant_time_bilateral(img, sigma):
+def constant_time_bilateral(img, sigma, kernelsize):
     image = img.copy()
     imnoise = gaussian_noise(image, sigma)
     filtered = np.zeros([imnoise.shape[0], imnoise.shape[1]])
@@ -245,7 +215,7 @@ def constant_time_bilateral(img, sigma):
     # print('Applying the filter...')
 
     # legyen 5x5-os kernel most
-    kernel_s = 5
+    kernel_s = kernelsize
 
     for i in range(2, rows - 2):
         for j in range(2, cols - 2):
@@ -301,9 +271,7 @@ def SHcomp(Ig, ws, BinN=11):
     """
     h, w = Ig.shape
     bn = 1
-    #
     # quantize values at each pixel into bin ID
-    # for i in range(bn):
     b_max = np.max(Ig[:, :])
     b_min = np.min(Ig[:, :])
 
@@ -338,25 +306,48 @@ def SHcomp(Ig, ws, BinN=11):
     integral_hist_pad = np.concatenate([padding_t, integral_hist_pad_tmp, padding_b], axis=0)
 
     integral_hist_1 = integral_hist_pad[ws + 1 + ws:, ws + 1 + ws:, :]
-    # print(integral_hist_1)
     integral_hist_2 = integral_hist_pad[:-ws - ws - 1, :-ws - ws - 1, :]
-    # print(integral_hist_2)
     integral_hist_3 = integral_hist_pad[ws + 1 + ws:, :-ws - ws - 1, :]
-    # print(integral_hist_3)
     integral_hist_4 = integral_hist_pad[:-ws - ws - 1, ws + 1 + ws:, :]
-    # print(integral_hist_4)
 
     sh_mtx = integral_hist_1 + integral_hist_2 - integral_hist_3 - integral_hist_4
-    # return sh_mtx
-
-    # szazalekos eloszlas szamitasa
-    # histsum = np.sum(sh_mtx, axis=-1, keepdims=True)
-    # print(histsum)
-
-    # sh_mtx = np.float32(sh_mtx) / np.float32(histsum)
-    # print(sh_mtx)
 
     return sh_mtx
+
+
+def gradient_inverse_weighted(img, sigma, kernelsize):
+    image = img.copy()
+    noisy = gaussian_noise(image, sigma)
+    imnoise = border_padding(noisy, 1)
+    noisy = np.float32(noisy)
+    imnoise = np.float32(imnoise)
+    rows, cols = noisy.shape
+    print('Applying the filter...')
+
+    for i in range(1, rows):
+        for j in range(1, cols):
+            sum_delta = 0
+            sum_weight = 0
+            for k in range(-kernelsize, kernelsize):
+                if k == 0:
+                    continue
+                distance = imnoise[i + k, j + k] - imnoise[i, j]
+                delta = 1 / distance if distance > 0 else 2
+                sum_delta += delta
+
+            for s in range(-kernelsize, kernelsize):
+                if s == 0:
+                    continue
+                distance = imnoise[i + s, j + s] - imnoise[i, j]
+                delta = 1 / distance if distance > 0 else 2
+                weight = delta / sum_delta
+                sum_weight += weight * imnoise[i + s, j + s]
+
+            noisy[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
+
+    noisy = np.uint8(noisy)
+    print('Filter applied!\n')
+    return noisy
 
 
 def GIW_new(img, sigma, kernelsize, isrepeat):
@@ -404,6 +395,7 @@ def GIW_new(img, sigma, kernelsize, isrepeat):
     return noisy
 
 
+# Segedszamitasok innentol
 # imnoise a vizsgalt kep, i es j pedig az aktualis pixel
 def get_5x5_kernel(imnoise, i, j):
     kernel = [imnoise[i - 2, j - 2], imnoise[i - 2, j - 1], imnoise[i - 2, j], imnoise[i - 1, j - 2],
@@ -416,6 +408,18 @@ def get_5x5_kernel(imnoise, i, j):
               imnoise[i + 1, j], imnoise[i + 1, j + 2], imnoise[i + 2, j],
               imnoise[i + 2, j + 1], imnoise[i + 2, j + 2]]
     return kernel
+
+
+def psnr_function(original, denoised):
+    mse = np.mean((original - denoised) ** 2)
+    print("mse: ", mse)
+    if mse == 0:  # MSE is zero means no noise is present in the signal .
+        # Therefore PSNR have no importance.
+        return 100
+    max_pixel = 255.0
+    psnr = 20 * log10(max_pixel / sqrt(mse))
+    print("psnr: ", psnr)
+    return psnr
 
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()

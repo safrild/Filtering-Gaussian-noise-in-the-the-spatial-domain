@@ -1,15 +1,18 @@
-import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget
+
 from gauss_noise_reduction import *
 
 # kepek beolvasasa es tombbe helyezese
+Lenna = cv2.imread('Lenna_(test_image).png', cv2.IMREAD_GRAYSCALE)
+cv2.imwrite('Lena_bw.jpg', Lenna)
 Lake = cv2.imread('Lake.jpg', cv2.IMREAD_GRAYSCALE)
 Tower = cv2.imread('Tower.jpg', cv2.IMREAD_GRAYSCALE)
 Wall = cv2.imread('Wall.jpg', cv2.IMREAD_GRAYSCALE)
 Lake256 = cv2.imread('Lake_256.jpg', cv2.IMREAD_GRAYSCALE)
-images = {"Lake": Lake,
+images = {"Lenna": Lenna,
+          "Lake": Lake,
           "Lake256": Lake256,
           "Tower": Tower,
           "Wall": Wall}
@@ -39,7 +42,7 @@ def window():
     comboBoxAlgorithm = QtWidgets.QComboBox(win)
     comboBoxAlgorithm.addItems(
         ["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method NEW", "Bilateral",
-         "Bilateral constant time"])
+         "Bilateral with integral histogram"])
     layout.addWidget(comboBoxAlgorithm)
     # Sigma a zajosításhoz
     label2 = QtWidgets.QLabel(win)
@@ -77,7 +80,7 @@ def window():
     layout.addWidget(label6)
     label6.hide()
     sliderRangeSigma = QtWidgets.QSlider(Qt.Horizontal)
-    sliderRangeSigma.setMinimum(0)
+    sliderRangeSigma.setMinimum(1)
     sliderRangeSigma.setMaximum(100)
     sliderRangeSigma.setValue(40)
     layout.addWidget(sliderRangeSigma)
@@ -88,7 +91,7 @@ def window():
     layout.addWidget(label7)
     label7.hide()
     sliderSpaceSigma = QtWidgets.QSlider(Qt.Horizontal)
-    sliderSpaceSigma.setMinimum(0)
+    sliderSpaceSigma.setMinimum(1)
     sliderSpaceSigma.setMaximum(100)
     sliderSpaceSigma.setValue(40)
     layout.addWidget(sliderSpaceSigma)
@@ -133,6 +136,8 @@ def window():
             comboBoxKernel.addItems(kernels)
             label8.show()
             comboBoxGIWRepeat.show()
+        elif comboBoxAlgorithm.currentText() == "Bilateral with integral histogram":
+            comboBoxKernel.addItem("5x5 (time consuming)")
         else:
             comboBoxKernel.addItems(kernels)
 
@@ -159,25 +164,33 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     range_sigma = range_sigmaparam
     if algorithm == "Kuwahara":
         final = kuwahara(images[inputphoto], sigma)
+        cv2.imwrite('kuwahara.jpg', final)
     elif algorithm == "Gradient inverse weighted method":
         final = gradient_inverse_weighted(images[inputphoto], sigma, kernels[kernelsize])
+        cv2.imwrite('giw.jpg', final)
     elif algorithm == "Sigma":
         final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelsize])
+        cv2.imwrite('sigma.jpg', final)
     elif algorithm == "Bilateral":
         final = bilateral(images[inputphoto], sigma, kernels[kernelsize], range_sigma,
                           space_sigmaparam)
+        cv2.imwrite('bilateral.jpg', final)
     elif algorithm == "Gradient inverse weighted method NEW":
         if giw_repeat_times == "1":
             final = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
+            cv2.imwrite('giw_new.jpg', final)
         elif giw_repeat_times == "2":
             first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
-            final = GIW_new(first, sigma, kernels[kernelsize], True)
+            final = GIW_new(first, sigma, kernels[kernelsize], True) #TODO: error at 5x5 kernel and 2 repeat and 3 repeat
+            cv2.imwrite('giw_new.jpg', final)
         else:
             first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
             second = GIW_new(first, sigma, kernels[kernelsize], True)
             final = GIW_new(second, sigma, kernels[kernelsize], True)
-    elif algorithm == "Bilateral constant time":
-        final = constant_time_bilateral(images[inputphoto], sigma)
+            cv2.imwrite('giw_new.jpg', final)
+    elif algorithm == "Bilateral with integral histogram":
+        final = constant_time_bilateral(images[inputphoto], sigma, kernels[kernelsize])
+        cv2.imwrite('bilateral_constant.jpg', final)
     cv2.imshow('Image after denoising', final)
 
 
