@@ -47,6 +47,8 @@ def kuwahara(img, sigma):
 
     rows, cols = noisy.shape
 
+    denoised = noisy.copy()
+
     print('Applying the filter...')
     for i in range(2, rows):
         for j in range(2, cols):
@@ -79,7 +81,7 @@ def kuwahara(img, sigma):
                 'Q1': meanq1,
                 'Q2': meanq2,
                 'Q3': meanq3,
-                'Q4': meanq4,
+                'Q4': meanq4
             }
 
             deviation = {
@@ -96,19 +98,20 @@ def kuwahara(img, sigma):
             # print('Means: ', mean)
             # print('Mean of region with smallest dev: ', meanofregion)
 
-            noisy[i, j] = meanofregion
+            denoised[i, j] = meanofregion
 
     print('Filter applied!\n')
-    return noisy
+    psnr_function(noisy, denoised)
+    return denoised
 
 
 def sigmaAlgorithm(img, sigma, kernelsize):
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
     imnoise = border_padding(noisy, kernelsize)
-    noisy = np.float32(noisy)
+    image_to_denoise = np.float32(noisy)
     imnoise = np.float32(imnoise)
-    rows, cols = noisy.shape
+    rows, cols = image_to_denoise.shape
     print('Applying the filter...')
     for i in range(2, rows):
         for j in range(2, cols):
@@ -123,20 +126,19 @@ def sigmaAlgorithm(img, sigma, kernelsize):
                         sum = sum + imnoise[i + k, j + l]
                         count += 1
             average = round(sum / count, 4)
-            noisy[i, j] = average
-    noisy = np.uint8(noisy)
-
-    psnr_function(image, image)
+            image_to_denoise[i, j] = average
+    denoised = np.uint8(image_to_denoise)
 
     print('Filter applied!\n')
-    return noisy
+    psnr_function(noisy, denoised)
+    return denoised
 
 
 def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
     image = img.copy()
-    imnoise = gaussian_noise(image, sigma)
-    filtered = np.zeros([imnoise.shape[0], imnoise.shape[1]])
-    imnoise = border_padding(imnoise, 2)
+    noised = gaussian_noise(image, sigma)
+    filtered = np.zeros([noised.shape[0], noised.shape[1]])
+    imnoise = border_padding(noised, 2)
     imnoise = np.float32(imnoise)
     filtered = np.float32(filtered)
 
@@ -193,15 +195,16 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
             filtered[i - 2, j - 2] = p_value
 
     filtered = np.uint8(filtered)
+    psnr_function(noised, filtered)
     print('Filter applied!\n')
     return filtered
 
 
 def new_bilateral(img, sigma, kernelsize):
     image = img.copy()
-    imnoise = gaussian_noise(image, sigma)
-    filtered = np.zeros([imnoise.shape[0], imnoise.shape[1]])
-    imnoise = border_padding(imnoise, 2)
+    noised = gaussian_noise(image, sigma)
+    filtered = np.zeros([noised.shape[0], noised.shape[1]])
+    imnoise = border_padding(noised, 2)
     imnoise = np.float32(imnoise)
     filtered = np.float32(filtered)
 
@@ -258,6 +261,7 @@ def new_bilateral(img, sigma, kernelsize):
 
     filtered = np.uint8(filtered)
     print('Filter applied!\n')
+    psnr_function(noised, filtered)
     return filtered
 
 
@@ -319,9 +323,9 @@ def gradient_inverse_weighted(img, sigma, kernelsize):
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
     imnoise = border_padding(noisy, 1)
-    noisy = np.float32(noisy)
+    denoised = np.float32(noisy)
     imnoise = np.float32(imnoise)
-    rows, cols = noisy.shape
+    rows, cols = denoised.shape
     print('Applying the filter...')
 
     for i in range(1, rows):
@@ -343,11 +347,12 @@ def gradient_inverse_weighted(img, sigma, kernelsize):
                 weight = delta / sum_delta
                 sum_weight += weight * imnoise[i + s, j + s]
 
-            noisy[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
+            denoised[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
 
-    noisy = np.uint8(noisy)
+    denoised = np.uint8(denoised)
     print('Filter applied!\n')
-    return noisy
+    psnr_function(noisy, denoised)
+    return denoised
 
 
 def GIW_new(img, sigma, kernelsize, isrepeat):
@@ -358,10 +363,10 @@ def GIW_new(img, sigma, kernelsize, isrepeat):
     else:
         noisy = image
         imnoise = noisy
-    noisy = np.float32(noisy)
+    denoised = np.float32(noisy)
     imnoise = np.float32(imnoise)
     imnoise = border_padding(imnoise, kernelsize)
-    rows, cols = noisy.shape
+    rows, cols = denoised.shape
     print('Applying the filter...')
     for i in range(0, rows):
         for j in range(0, cols):
@@ -389,11 +394,11 @@ def GIW_new(img, sigma, kernelsize, isrepeat):
 
             kij = sum_weight_square / (1 + sum_weight_square)
 
-            noisy[i, j] = kij * imnoise[i, j] + ((1 - kij) * sum_weight)
+            denoised[i, j] = kij * imnoise[i, j] + ((1 - kij) * sum_weight)
 
-    noisy = np.uint8(noisy)
+    denoised = np.uint8(denoised)
     print('Filter applied!\n')
-    return noisy
+    return denoised
 
 
 # Segedszamitasok innentol
@@ -419,7 +424,7 @@ def psnr_function(original, denoised):
         return 100
     max_pixel = 255.0
     psnr = 20 * log10(max_pixel / sqrt(mse))
-    print("psnr: ", psnr)
+    print("psnr: ", round(psnr, 4))
     return psnr
 
 # cv2.waitKey(0)
