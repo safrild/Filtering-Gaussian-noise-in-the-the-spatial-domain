@@ -7,7 +7,7 @@ import numpy as np
 
 from math import log10, sqrt
 
-from PIL import ImageStat, Image
+from PIL import Image
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -134,7 +134,7 @@ def sigmaAlgorithm(img, sigma, kernelsize):
     print('Filter applied!\n')
     black = cv2.imread("black.png")
     white = cv2.imread("white.png")
-    ssim_function(black, white)
+    # ssim_function(black, white)
     psnr_function(noisy, denoised)
     ssim_function(noisy, denoised)
     return denoised
@@ -448,15 +448,40 @@ def ssim_function(original, denoised):
     print("luminance: ", luminance)
 
     # Contrast factor
-    original_contrast = np.std(original)
-    denoised_contrast = np.std(denoised)
+    original_std = np.std(original)
+    denoised_std = np.std(denoised)
     k2 = 0.00001
     c2 = (k2 + l) ** 2
-    contrast = np.round((2 * original_contrast * denoised_contrast + c2) / (original_contrast ** 2 + denoised_contrast ** 2 + c2), 6)
+    contrast = np.round((2 * original_std * denoised_std + c2) / (original_std ** 2 + denoised_std ** 2 + c2), 6)
     print("contrast: ", contrast)
 
-    # Loss of correlation factor
-    # TODO
+    # Structural factor
+    # original_structure = (original - original_mean) / original_std
+    # denoised_structure = (denoised - denoised_mean) / denoised_std
+
+    k3 = 0.00001
+    c3 = (k3 + l) ** 2
+
+    rows, cols = denoised.shape
+    print(rows)
+    sum = 0
+    print("original shape ", np.shape(original))
+    print("denoised shape ", np.shape(denoised))
+
+    for i in range(0, rows):
+        for j in range(0, cols):
+            sum += (original[i][j] - original_mean) * (denoised[i][j] - denoised_mean)
+
+    structural_factor = 1 / (rows * cols - 1) * sum
+
+    structure = (structural_factor + c3) / (original_std * denoised_std + c3)
+    print("structure: ", structure)
+
+    alpha = 1
+    beta = 1
+    gamma = 1
+    ssim = (luminance ** alpha) * (contrast ** beta) * (structure ** gamma)
+    print("ssim: ", ssim)
 
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()
