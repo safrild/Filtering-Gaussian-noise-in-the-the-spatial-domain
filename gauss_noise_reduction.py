@@ -7,6 +7,8 @@ import numpy as np
 
 from math import log10, sqrt
 
+from PIL import ImageStat, Image
+
 np.set_printoptions(threshold=sys.maxsize)
 
 
@@ -130,7 +132,11 @@ def sigmaAlgorithm(img, sigma, kernelsize):
     denoised = np.uint8(image_to_denoise)
 
     print('Filter applied!\n')
+    black = cv2.imread("black.png")
+    white = cv2.imread("white.png")
+    ssim_function(black, white)
     psnr_function(noisy, denoised)
+    ssim_function(noisy, denoised)
     return denoised
 
 
@@ -416,6 +422,9 @@ def get_5x5_kernel(imnoise, i, j):
     return kernel
 
 
+# Image fidality metrics
+
+
 def psnr_function(original, denoised):
     mse = np.mean((original - denoised) ** 2)
     print("mse: ", mse)
@@ -426,6 +435,28 @@ def psnr_function(original, denoised):
     psnr = 20 * log10(max_pixel / sqrt(mse))
     print("psnr: ", round(psnr, 4))
     return psnr
+
+
+def ssim_function(original, denoised):
+    # Luminance factor
+    original_mean = np.mean(original)
+    denoised_mean = np.mean(denoised)
+    l = 255
+    k1 = 0.00001  # TODO: milyen k ertek az ajanlott? "very small constant"
+    c1 = (k1 + l) ** 2
+    luminance = np.round((2 * original_mean * denoised_mean + c1) / (original_mean ** 2 + denoised_mean ** 2 + c1), 6)
+    print("luminance: ", luminance)
+
+    # Contrast factor
+    original_contrast = np.std(original)
+    denoised_contrast = np.std(denoised)
+    k2 = 0.00001
+    c2 = (k2 + l) ** 2
+    contrast = np.round((2 * original_contrast * denoised_contrast + c2) / (original_contrast ** 2 + denoised_contrast ** 2 + c2), 6)
+    print("contrast: ", contrast)
+
+    # Loss of correlation factor
+    # TODO
 
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()
