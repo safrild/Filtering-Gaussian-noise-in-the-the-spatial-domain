@@ -133,10 +133,10 @@ def sigmaAlgorithm(img, sigma, kernelsize):
 
     print('Filter applied!\n')
     black = cv2.imread("black.png")
-    white = cv2.imread("white.png")
+    white = cv2.imread("white.jpg")
     # ssim_function(black, white)
-    psnr_function(noisy, denoised)
-    ssim_function(noisy, denoised)
+    # psnr_function(noisy, denoised)
+    # ssim_function(noisy, white)
     return denoised
 
 
@@ -424,7 +424,6 @@ def get_5x5_kernel(imnoise, i, j):
 
 # Image fidality metrics
 
-
 def psnr_function(original, denoised):
     mse = np.mean((original - denoised) ** 2)
     print("mse: ", mse)
@@ -441,38 +440,42 @@ def ssim_function(original, denoised):
     # Luminance factor
     original_mean = np.mean(original)
     denoised_mean = np.mean(denoised)
+    # L = dynamic range of pixel values
     l = 255
-    k1 = 0.00001  # TODO: milyen k ertek az ajanlott? "very small constant"
-    c1 = (k1 + l) ** 2
-    luminance = np.round((2 * original_mean * denoised_mean + c1) / (original_mean ** 2 + denoised_mean ** 2 + c1), 6)
+    k1 = 0.01  # TODO: milyen k ertek az ajanlott? "very small constant"
+    c1 = (k1 * l) ** 2
+    # luminance = np.round((2 * original_mean * denoised_mean + c1) / (original_mean ** 2 + denoised_mean ** 2 + c1), 6)
+    luminance = (2 * original_mean * denoised_mean + c1) / (original_mean ** 2 + denoised_mean ** 2 + c1)
     print("luminance: ", luminance)
 
     # Contrast factor
     original_std = np.std(original)
     denoised_std = np.std(denoised)
-    k2 = 0.00001
-    c2 = (k2 + l) ** 2
-    contrast = np.round((2 * original_std * denoised_std + c2) / (original_std ** 2 + denoised_std ** 2 + c2), 6)
+
+    k2 = 0.01
+    c2 = (k2 * l) ** 2
+    # contrast = np.round((2 * original_std * denoised_std + c2) / (original_std ** 2 + denoised_std ** 2 + c2), 6)
+    contrast = (2 * original_std * denoised_std + c2) / (original_std ** 2 + denoised_std ** 2 + c2)
     print("contrast: ", contrast)
 
     # Structural factor
-    # original_structure = (original - original_mean) / original_std
-    # denoised_structure = (denoised - denoised_mean) / denoised_std
 
-    k3 = 0.00001
-    c3 = (k3 + l) ** 2
+    k3 = 0.01
+    c3 = c2 / 2
 
-    rows, cols = denoised.shape
-    print(rows)
+    rows, cols, channels = denoised.shape
     sum = 0
-    print("original shape ", np.shape(original))
-    print("denoised shape ", np.shape(denoised))
+
+    if denoised.shape != original.shape:
+        raise ValueError('Different input image sizes!')
 
     for i in range(0, rows):
         for j in range(0, cols):
-            sum += (original[i][j] - original_mean) * (denoised[i][j] - denoised_mean)
+            sum += (original[i, j][0] - original_mean) * (denoised[i, j][0] - denoised_mean)
 
+    print("sum: ", sum)
     structural_factor = 1 / (rows * cols - 1) * sum
+    print("structural factor: ", structural_factor)
 
     structure = (structural_factor + c3) / (original_std * denoised_std + c3)
     print("structure: ", structure)
