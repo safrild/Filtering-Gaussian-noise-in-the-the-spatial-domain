@@ -7,8 +7,6 @@ import numpy as np
 
 from math import log10, sqrt
 
-from PIL import Image
-
 np.set_printoptions(threshold=sys.maxsize)
 
 
@@ -104,6 +102,7 @@ def kuwahara(img, sigma):
 
     print('Filter applied!\n')
     psnr_function(noisy, denoised)
+    # ssim_function(noisy, denoised)
     return denoised
 
 
@@ -132,11 +131,8 @@ def sigmaAlgorithm(img, sigma, kernelsize):
     denoised = np.uint8(image_to_denoise)
 
     print('Filter applied!\n')
-    black = cv2.imread("black.png")
-    white = cv2.imread("white.jpg")
-    # ssim_function(black, white)
-    # psnr_function(noisy, denoised)
-    # ssim_function(noisy, white)
+    psnr_function(noisy, denoised)
+    # ssim_function(noisy, denoised)
     return denoised
 
 
@@ -202,6 +198,7 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
 
     filtered = np.uint8(filtered)
     psnr_function(noised, filtered)
+    # ssim_function(noised, filtered)
     print('Filter applied!\n')
     return filtered
 
@@ -268,6 +265,7 @@ def new_bilateral(img, sigma, kernelsize):
     filtered = np.uint8(filtered)
     print('Filter applied!\n')
     psnr_function(noised, filtered)
+    # ssim_function(noised, filtered)
     return filtered
 
 
@@ -358,6 +356,7 @@ def gradient_inverse_weighted(img, sigma, kernelsize):
     denoised = np.uint8(denoised)
     print('Filter applied!\n')
     psnr_function(noisy, denoised)
+    # ssim_function(noisy, denoised)
     return denoised
 
 
@@ -407,7 +406,7 @@ def GIW_new(img, sigma, kernelsize, isrepeat):
     return denoised
 
 
-# Segedszamitasok innentol
+# Segedszamitas
 # imnoise a vizsgalt kep, i es j pedig az aktualis pixel
 def get_5x5_kernel(imnoise, i, j):
     kernel = [imnoise[i - 2, j - 2], imnoise[i - 2, j - 1], imnoise[i - 2, j], imnoise[i - 1, j - 2],
@@ -444,7 +443,6 @@ def ssim_function(original, denoised):
     l = 255
     k1 = 0.01  # TODO: milyen k ertek az ajanlott? "very small constant"
     c1 = (k1 * l) ** 2
-    # luminance = np.round((2 * original_mean * denoised_mean + c1) / (original_mean ** 2 + denoised_mean ** 2 + c1), 6)
     luminance = (2 * original_mean * denoised_mean + c1) / (original_mean ** 2 + denoised_mean ** 2 + c1)
     print("luminance: ", luminance)
 
@@ -454,14 +452,13 @@ def ssim_function(original, denoised):
 
     k2 = 0.01
     c2 = (k2 * l) ** 2
-    # contrast = np.round((2 * original_std * denoised_std + c2) / (original_std ** 2 + denoised_std ** 2 + c2), 6)
     contrast = (2 * original_std * denoised_std + c2) / (original_std ** 2 + denoised_std ** 2 + c2)
     print("contrast: ", contrast)
 
     # Structural factor
 
     k3 = 0.01
-    c3 = c2 / 2
+    c3 = c2 / 2 # az egyszeruseg kedveert most c3 erteke legyen c2 / 2
 
     rows, cols, channels = denoised.shape
     sum = 0

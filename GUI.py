@@ -181,7 +181,8 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
             cv2.imwrite('giw_new.jpg', final)
         elif giw_repeat_times == "2":
             first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
-            final = GIW_new(first, sigma, kernels[kernelsize], True) #TODO: error at 5x5 kernel and 2 repeat and 3 repeat
+            final = GIW_new(first, sigma, kernels[kernelsize],
+                            True)  # TODO: error at 5x5 kernel and 2 repeat and 3 repeat
             cv2.imwrite('giw_new.jpg', final)
         else:
             first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
@@ -197,6 +198,13 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     cv2.imshow('Image after denoising', final)
 
 
+black = cv2.imread("black.jpg")
+white = cv2.imread("white.jpg")
+noisy = cv2.imread("noised_image.jpg")
+denoised_sigma = cv2.imread("sigma_denoised.jpg")
+# print("Noised image shape: ", noisy.shape)
+# print("Denoised sigma shape: ", denoised_sigma.shape)
+# ssim_function(noisy, denoised_sigma)
 window()
 cv2.waitKey(0)
 cv2.destroyAllWindows()
