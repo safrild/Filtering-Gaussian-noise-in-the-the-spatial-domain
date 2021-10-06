@@ -40,6 +40,7 @@ def kuwahara(img, sigma):
     image = img.copy()
 
     noisy = gaussian_noise(image, sigma)
+    cv2.imwrite('kuwahara_noised.jpg', noisy)
 
     # kitoltjuk a kep szeleit
     # a "kiterjesztett", "padded" kepet nem jelentitjuk meg
@@ -102,7 +103,8 @@ def kuwahara(img, sigma):
 
     print('Filter applied!\n')
     psnr_function(noisy, denoised)
-    # ssim_function(noisy, denoised)
+    print(noisy.shape, denoised.shape)
+    ssim_function(noisy, denoised)
     return denoised
 
 
@@ -132,7 +134,8 @@ def sigmaAlgorithm(img, sigma, kernelsize):
 
     print('Filter applied!\n')
     psnr_function(noisy, denoised)
-    # ssim_function(noisy, denoised)
+    # print(noisy.dtype, denoised.dtype)
+    ssim_function(noisy, denoised)
     return denoised
 
 
@@ -198,7 +201,7 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
 
     filtered = np.uint8(filtered)
     psnr_function(noised, filtered)
-    # ssim_function(noised, filtered)
+    ssim_function(noised, filtered)
     print('Filter applied!\n')
     return filtered
 
@@ -265,7 +268,7 @@ def new_bilateral(img, sigma, kernelsize):
     filtered = np.uint8(filtered)
     print('Filter applied!\n')
     psnr_function(noised, filtered)
-    # ssim_function(noised, filtered)
+    ssim_function(noised, filtered)
     return filtered
 
 
@@ -356,7 +359,7 @@ def gradient_inverse_weighted(img, sigma, kernelsize):
     denoised = np.uint8(denoised)
     print('Filter applied!\n')
     psnr_function(noisy, denoised)
-    # ssim_function(noisy, denoised)
+    ssim_function(noisy, denoised)
     return denoised
 
 
@@ -458,17 +461,21 @@ def ssim_function(original, denoised):
     # Structural factor
 
     k3 = 0.01
-    c3 = c2 / 2 # az egyszeruseg kedveert most c3 erteke legyen c2 / 2
+    c3 = c2 / 2  # az egyszeruseg kedveert most c3 erteke legyen c2 / 2
 
-    rows, cols, channels = denoised.shape
+    print('Input photo shapes are equal: ', denoised.shape == original.shape)
+    print('Original shape: ', original.shape)
+    print('Denoised shape: ', denoised.shape)
+    rows, cols = denoised.shape
     sum = 0
+    print('rows and cols: ', rows, cols)
 
-    if denoised.shape != original.shape:
-        raise ValueError('Different input image sizes!')
+    # if denoised.shape != original.shape:
+    #     raise ValueError('Different input image sizes!')
 
     for i in range(0, rows):
         for j in range(0, cols):
-            sum += (original[i, j][0] - original_mean) * (denoised[i, j][0] - denoised_mean)
+            sum += (original[i, j] - original_mean) * (denoised[i, j] - denoised_mean)
 
     print("sum: ", sum)
     structural_factor = 1 / (rows * cols - 1) * sum

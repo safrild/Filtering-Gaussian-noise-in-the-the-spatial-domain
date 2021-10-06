@@ -164,7 +164,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     range_sigma = range_sigmaparam
     if algorithm == "Kuwahara":
         final = kuwahara(images[inputphoto], sigma)
-        cv2.imwrite('kuwahara.jpg', final)
+        cv2.imwrite('kuwahara_denoised.jpg', final)
     elif algorithm == "Gradient inverse weighted method":
         final = gradient_inverse_weighted(images[inputphoto], sigma, kernels[kernelsize])
         cv2.imwrite('giw.jpg', final)
@@ -200,8 +200,8 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
 
 black = cv2.imread("black.jpg")
 white = cv2.imread("white.jpg")
-noisy = cv2.imread("noised_image.jpg")
-denoised_sigma = cv2.imread("sigma_denoised.jpg")
+noisy = cv2.imread("kuwahara_noised.jpg")
+denoised_sigma = cv2.imread("kuwahara_denoised.jpg")
 # print("Noised image shape: ", noisy.shape)
 # print("Denoised sigma shape: ", denoised_sigma.shape)
 # ssim_function(noisy, denoised_sigma)
