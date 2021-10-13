@@ -40,7 +40,6 @@ def kuwahara(img, sigma):
     image = img.copy()
 
     noisy = gaussian_noise(image, sigma)
-    cv2.imwrite('kuwahara_noised.jpg', noisy)
 
     # kitoltjuk a kep szeleit
     # a "kiterjesztett", "padded" kepet nem jelentitjuk meg
@@ -102,9 +101,8 @@ def kuwahara(img, sigma):
             denoised[i, j] = meanofregion
 
     print('Filter applied!\n')
-    psnr_function(noisy, denoised)
-    print(noisy.shape, denoised.shape)
-    ssim_function(noisy, denoised)
+    psnr_function(image, denoised)
+    ssim_function(image, denoised)
     return denoised
 
 
@@ -133,9 +131,9 @@ def sigmaAlgorithm(img, sigma, kernelsize):
     denoised = np.uint8(image_to_denoise)
 
     print('Filter applied!\n')
-    psnr_function(noisy, denoised)
-    # print(noisy.dtype, denoised.dtype)
-    ssim_function(noisy, denoised)
+    psnr_function(image, denoised)
+    print(denoised.shape)
+    ssim_function(image, denoised)
     return denoised
 
 
@@ -200,8 +198,8 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
             filtered[i - 2, j - 2] = p_value
 
     filtered = np.uint8(filtered)
-    psnr_function(noised, filtered)
-    ssim_function(noised, filtered)
+    psnr_function(image, filtered)
+    ssim_function(image, filtered)
     print('Filter applied!\n')
     return filtered
 
@@ -267,8 +265,8 @@ def new_bilateral(img, sigma, kernelsize):
 
     filtered = np.uint8(filtered)
     print('Filter applied!\n')
-    psnr_function(noised, filtered)
-    ssim_function(noised, filtered)
+    psnr_function(image, filtered)
+    ssim_function(image, filtered)
     return filtered
 
 
@@ -358,8 +356,8 @@ def gradient_inverse_weighted(img, sigma, kernelsize):
 
     denoised = np.uint8(denoised)
     print('Filter applied!\n')
-    psnr_function(noisy, denoised)
-    ssim_function(noisy, denoised)
+    psnr_function(image, denoised)
+    ssim_function(image, denoised)
     return denoised
 
 
@@ -406,6 +404,8 @@ def GIW_new(img, sigma, kernelsize, isrepeat):
 
     denoised = np.uint8(denoised)
     print('Filter applied!\n')
+    psnr_function(image, denoised)
+    ssim_function(image, denoised)
     return denoised
 
 
@@ -428,7 +428,7 @@ def get_5x5_kernel(imnoise, i, j):
 
 def psnr_function(original, denoised):
     mse = np.mean((original - denoised) ** 2)
-    print("mse: ", mse)
+    # print("mse: ", mse)
     if mse == 0:  # MSE is zero means no noise is present in the signal .
         # Therefore PSNR have no importance.
         return 100
@@ -447,7 +447,7 @@ def ssim_function(original, denoised):
     k1 = 0.01  # TODO: milyen k ertek az ajanlott? "very small constant"
     c1 = (k1 * l) ** 2
     luminance = (2 * original_mean * denoised_mean + c1) / (original_mean ** 2 + denoised_mean ** 2 + c1)
-    print("luminance: ", luminance)
+    # print("luminance: ", luminance)
 
     # Contrast factor
     original_std = np.std(original)
@@ -456,19 +456,16 @@ def ssim_function(original, denoised):
     k2 = 0.01
     c2 = (k2 * l) ** 2
     contrast = (2 * original_std * denoised_std + c2) / (original_std ** 2 + denoised_std ** 2 + c2)
-    print("contrast: ", contrast)
+    # print("contrast: ", contrast)
 
     # Structural factor
 
     k3 = 0.01
     c3 = c2 / 2  # az egyszeruseg kedveert most c3 erteke legyen c2 / 2
 
-    print('Input photo shapes are equal: ', denoised.shape == original.shape)
-    print('Original shape: ', original.shape)
-    print('Denoised shape: ', denoised.shape)
     rows, cols = denoised.shape
     sum = 0
-    print('rows and cols: ', rows, cols)
+    # print('rows and cols: ', rows, cols)
 
     # if denoised.shape != original.shape:
     #     raise ValueError('Different input image sizes!')
@@ -477,18 +474,18 @@ def ssim_function(original, denoised):
         for j in range(0, cols):
             sum += (original[i, j] - original_mean) * (denoised[i, j] - denoised_mean)
 
-    print("sum: ", sum)
+    # print("sum: ", sum)
     structural_factor = 1 / (rows * cols - 1) * sum
-    print("structural factor: ", structural_factor)
+    # print("structural factor: ", structural_factor)
 
     structure = (structural_factor + c3) / (original_std * denoised_std + c3)
-    print("structure: ", structure)
+    # print("structure: ", structure)
 
     alpha = 1
     beta = 1
     gamma = 1
     ssim = (luminance ** alpha) * (contrast ** beta) * (structure ** gamma)
-    print("ssim: ", ssim)
+    print("ssim: ", round(ssim, 4))
 
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()
