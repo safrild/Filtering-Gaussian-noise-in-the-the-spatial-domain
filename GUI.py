@@ -126,12 +126,6 @@ def window():
         comboBoxGIWRepeat.hide()
         if comboBoxAlgorithm.currentText() == "Kuwahara":
             comboBoxKernel.addItem("5x5 (time consuming)")
-        elif comboBoxAlgorithm.currentText() == "Bilateral":
-            comboBoxKernel.addItem("5x5 (time consuming)")
-            label6.show()
-            sliderRangeSigma.show()
-            label7.show()
-            sliderSpaceSigma.show()
         elif comboBoxAlgorithm.currentText() == "Gradient inverse weighted method NEW":
             comboBoxKernel.addItems(kernels)
             label8.show()
@@ -182,7 +176,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
         elif giw_repeat_times == "2":
             first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
             final = GIW_new(first, sigma, kernels[kernelsize],
-                            True)  # TODO: error at 5x5 kernel and 2 repeat and 3 repeat
+                            True)
             cv2.imwrite('giw_new.jpg', final)
         else:
             first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)

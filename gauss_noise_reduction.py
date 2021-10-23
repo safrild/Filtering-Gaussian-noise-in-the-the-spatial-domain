@@ -132,7 +132,6 @@ def sigmaAlgorithm(img, sigma, kernelsize):
 
     print('Filter applied!\n')
     psnr_function(image, denoised)
-    print(denoised.shape)
     ssim_function(image, denoised)
     return denoised
 
@@ -164,9 +163,6 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
     gaussian_kernel = np.multiply(xdir_gauss.T, xdir_gauss)
     print("Kernel: \n", gaussian_kernel)
 
-    # legyen 5x5-os kernel most
-    kernel_s = 5
-
     for i in range(2, rows - 2):
         for j in range(2, cols - 2):
             # print("i: ", i, "j: ", j)
@@ -174,8 +170,8 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
             p_value = 0.0
             weight = 0.0
 
-            m = kernel_s // 2
-            n = kernel_s // 2
+            m = kernelsize // 2
+            n = kernelsize // 2
 
             # ha 5x5-os a kernel, akkor ez -2-tol 2-ig fut
             for x in range(i - m, i + m + 1):
