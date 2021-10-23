@@ -115,7 +115,6 @@ def sigmaAlgorithm(img, sigma, kernelsize):
             sum = 0
             count = 0
             # Kernelmeret: (2n + 1, 2m + 1)
-            # 3x3-as vagy 5x5-os ablakot vizsgalunk
             for k in range(-1 * kernelsize, 1 * kernelsize + 1):
                 for l in range(-1 * kernelsize, 1 * kernelsize + 1):
                     if imnoise[i, j] - 2 * sigma < imnoise[i + k, j + l] < imnoise[i, j] + 2 * sigma:
@@ -191,7 +190,7 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
     return filtered
 
 
-def new_bilateral(img, sigma, kernelsize):
+def bilateral_with_integral_histogram(img, sigma, kernelsize):
     image = img.copy()
     noised = gaussian_noise(image, sigma)
     filtered = np.zeros([noised.shape[0], noised.shape[1]])
@@ -408,7 +407,7 @@ def psnr_function(original, denoised):
         return 100
     max_pixel = 255.0
     psnr = 20 * log10(max_pixel / sqrt(mse))
-    print("psnr: ", round(psnr, 4))
+    print("PSNR value: ", round(psnr, 4))
     return psnr
 
 
@@ -452,7 +451,7 @@ def ssim_function(original, denoised):
     beta = 1
     gamma = 1
     ssim = (luminance ** alpha) * (contrast ** beta) * (structure ** gamma)
-    print("ssim: ", round(ssim, 4))
+    print("SSIM value: ", round(ssim, 4))
 
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()

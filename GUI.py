@@ -144,9 +144,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     global final
     print("\n")
     print(algorithm)
-    print(sigmaparam)
-    print(inputphoto)
-    print(kernels[kernelsize])
+    print("Deviation of the additive noise: ", sigmaparam)
     print("\n")
     sigma = int(sigmaparam)
     range_sigma = range_sigmaparam
@@ -178,7 +176,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
             final = gradient_inverse_weighted_method_upgrade(second, sigma, kernels[kernelsize], True)
             cv2.imwrite('giw_new.jpg', final)
     elif algorithm == "Bilateral with integral histogram":
-        final = new_bilateral(images[inputphoto], sigma, kernels[kernelsize])
+        final = bilateral_with_integral_histogram(images[inputphoto], sigma, kernels[kernelsize])
         cv2.imwrite('bilateral_constant.jpg', final)
     cv2.imshow('Image after denoising', final)
 
