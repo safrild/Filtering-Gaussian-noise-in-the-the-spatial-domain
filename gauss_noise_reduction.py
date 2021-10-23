@@ -226,7 +226,6 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
 
                     intenzitas_darabszam_dict[aktualis_intenzitasertek] = aktualis_intenzitasertek_darabszama
 
-                    # Ezzel szamoljuk ki a g-s reszt
                     range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_szigma ** 2)))
 
                     szorzat = intenzitas_darabszam_dict[
@@ -382,21 +381,6 @@ def gradient_inverse_weighted_method_upgrade(img, sigma, kernelsize, isrepeat):
     psnr_function(image, denoised)
     ssim_function(image, denoised)
     return denoised
-
-
-# Segedszamitas
-# imnoise a vizsgalt kep, i es j pedig az aktualis pixel
-def get_5x5_kernel(imnoise, i, j):
-    kernel = [imnoise[i - 2, j - 2], imnoise[i - 2, j - 1], imnoise[i - 2, j], imnoise[i - 1, j - 2],
-              imnoise[i - 1, j - 1],
-              imnoise[i, j - 2], imnoise[i, j - 1], imnoise[i, j],
-              imnoise[i - 2, j + 1], imnoise[i - 2, j + 2], imnoise[i - 1, j], imnoise[i - 1, j + 1],
-              imnoise[i - 1, j + 2],
-              imnoise[i, j + 1], imnoise[i, j + 2], imnoise[i + 1, j - 2],
-              imnoise[i + 1, j + 1], imnoise[i + 2, j - 2], imnoise[i + 2, j - 1], imnoise[i + 2, j],
-              imnoise[i + 1, j], imnoise[i + 1, j + 2], imnoise[i + 2, j],
-              imnoise[i + 2, j + 1], imnoise[i + 2, j + 2]]
-    return kernel
 
 
 # Keposszehasonlito metrikak
