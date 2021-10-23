@@ -10,23 +10,23 @@ from math import log10, sqrt
 np.set_printoptions(threshold=sys.maxsize)
 
 
-# ezzel a fuggvennyel toltjuk ki a kepszeleket zajszures elott "kiterjesztessel"
-# a kepek szelein talalhato ertekeket terjesztjuk ki, ezeket igy figyelembe vehetik a zajszuro algoritmusok
+# Ezzel a fuggvennyel toltjuk ki a kepszeleket zajszures elott "kiterjesztessel"
+# A kepek szelein talalhato ertekeket terjesztjuk ki, ezeket igy figyelembe vehetik a zajszuro algoritmusok
 def border_padding(img, value):
     src = img.copy()
     output = cv2.copyMakeBorder(src, value, value, value, value, cv2.BORDER_REPLICATE, None, None)
     return output
 
 
-# zajositjuk a kepet
+# Zajositjuk a kepet
 def gaussian_noise(img, sigma):
     original = img.copy()
-    # kirajzoljuk az eredeti kepet
+    # Kirajzoljuk az eredeti kepet
     cv2.imshow('Greyscale original photo', original)
-    # eloallitjuk a mesterseges zajt
+    # Eloallitjuk a mesterseges zajt
     noise = np.zeros(original.shape, np.int16)
-    # varhato ertek: 0 , szoras: SIGMA konstans
-    cv2.randn(noise, 0.0, sigma)  # normalis eloszlasu zajhoz kell a randn
+    # Varhato ertek: 0 , szoras: sigma input parameter
+    cv2.randn(noise, 0.0, sigma)  # Normalis eloszlasu zajhoz kell a randn
     imnoise = cv2.add(original, noise, dtype=cv2.CV_8UC1)
     # Kirajzoljuk a zajjal terhelt kepet
     print('Gaussian noise added!')
@@ -35,14 +35,12 @@ def gaussian_noise(img, sigma):
     return imnoise
 
 
-# nem allithato a kernelmeret ennel az algoritmusnal, mert az 5x5-os mar igyis tulsagosan idoigenyes
 def kuwahara(img, sigma):
     image = img.copy()
 
     noisy = gaussian_noise(image, sigma)
 
-    # kitoltjuk a kep szeleit
-    # a "kiterjesztett", "padded" kepet nem jelentitjuk meg
+    # Kitoltjuk a kep szeleit, a "kiterjesztett", "padded" kepet nem jelentitjuk meg
     imnoise = border_padding(noisy, 2)
 
     rows, cols = noisy.shape
@@ -77,7 +75,7 @@ def kuwahara(img, sigma):
             devq3 = round(statistics.stdev(np.int32(Q3)), 4)
             devq4 = round(statistics.stdev(np.int32(Q4)), 4)
 
-            # means
+            # Atlagok
             mean = {
                 'Q1': meanq1,
                 'Q2': meanq2,
@@ -85,7 +83,7 @@ def kuwahara(img, sigma):
                 'Q4': meanq4
             }
 
-            # deviations of regions
+            # A regiok szorasai
             deviation = {
                 'Q1': devq1,
                 'Q2': devq2,
@@ -93,8 +91,8 @@ def kuwahara(img, sigma):
                 'Q4': devq4
             }
 
-            smallestdevregion = min(deviation, key=deviation.get)  # region with smallest deviation
-            meanofregion = mean[smallestdevregion]  # mean of region with smallest deviation
+            smallestdevregion = min(deviation, key=deviation.get)  # A legkisebb szorasu regio
+            meanofregion = mean[smallestdevregion]  # A legkisebb szorasu regio atlaga
 
             denoised[i, j] = meanofregion
 
@@ -116,11 +114,10 @@ def sigmaAlgorithm(img, sigma, kernelsize):
         for j in range(2, cols):
             sum = 0
             count = 0
-            # kernelméret: (2n + 1, 2m + 1)
-            # 3x3-as vagy 5x5-ös ablakot vizsgálunk
+            # Kernelmeret: (2n + 1, 2m + 1)
+            # 3x3-as vagy 5x5-os ablakot vizsgalunk
             for k in range(-1 * kernelsize, 1 * kernelsize + 1):
                 for l in range(-1 * kernelsize, 1 * kernelsize + 1):
-                    # 2sigma-t vizsgalunk, pl 20-as szoras eseten ez az ertek 40
                     if imnoise[i, j] - 2 * sigma < imnoise[i + k, j + l] < imnoise[i, j] + 2 * sigma:
                         sum = sum + imnoise[i + k, j + l]
                         count += 1
@@ -142,20 +139,19 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
     imnoise = np.float32(imnoise)
     filtered = np.float32(filtered)
 
-    # step 1: set spatial_sigma and range_sigma
+    # 1. lepes: Beallitjuk a spatial_sigma es a range_sigma ertekeit
 
     print("Spatial sigma: ", space_sigma)
 
-    # range_szigma = 50
     print("Range szigma: ", range_sigma)
 
-    # A range_szigma csökkentése mellett erősödik a szűrő élmegőrző jellege
-    # a space_szigma növekedésével pedig erősödik a szűrő simító hatása.
+    # A range_szigma csokkentése mellett erosodik a szuro elmegorzo jellege
+    # A space_szigma novekedesevel pedig erosodik a szuro simito hatasa
 
     rows, cols = imnoise.shape
     print('Applying the filter...')
 
-    # step 2: make gauss kernel
+    # 2. lepes: Eloallitjuk a gauss kernelt
 
     xdir_gauss = cv2.getGaussianKernel(5, space_sigma)
     gaussian_kernel = np.multiply(xdir_gauss.T, xdir_gauss)
@@ -170,10 +166,9 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
             m = kernelsize // 2
             n = kernelsize // 2
 
-            # ha 5x5-os a kernel, akkor ez -2-tol 2-ig fut
+            # 5x5-os a kernel eseten -2-tol 2-ig fut
             for x in range(i - m, i + m + 1):
                 for y in range(j - n, j + n + 1):
-                    # print("x: ", x, "y: ", y)
 
                     # space weight
                     space_weight = gaussian_kernel[x - i + 2, y - j + 2]
@@ -181,11 +176,11 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
                     # range weight
                     range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
 
-                    # osszeszorozzuk ezt a ket sulyerteket a pixelintenzitassal es hozzaadjuk a p ertekehez
+                    # Osszeszorozzuk ezt a ket sulyerteket a pixelintenzitassal es hozzaadjuk a p ertekehez
                     p_value += (space_weight * range_weight * imnoise[x, y])
                     weight += (space_weight * range_weight)
 
-            # normalizaljuk a p erteket
+            # Normalizaljuk a p erteket
             p_value = p_value / weight
             filtered[i - 2, j - 2] = p_value
 
@@ -207,7 +202,6 @@ def new_bilateral(img, sigma, kernelsize):
     integral_histogram = SHcomp(imnoise, 2, 256)
 
     range_szigma = 50
-    # print("Range szigma: ", range_szigma)
 
     rows, cols = imnoise.shape
     print('Applying the filter...')
@@ -242,7 +236,7 @@ def new_bilateral(img, sigma, kernelsize):
                     normalizalashoz += (szorzat * imnoise[x, y])
                     weight += szorzat
 
-            # normalizaljuk a sulyerteket
+            # Normalizaljuk a sulyerteket
             suly = normalizalashoz / weight
             filtered[i - 2, j - 2] = suly
 
@@ -267,7 +261,7 @@ def SHcomp(Ig, ws, BinN=11):
     b_max = np.max(Ig[:, :])
     b_min = np.min(Ig[:, :])
 
-    # normalizalas, eltolja az intenzitastartomanyt (ha nem 0 a minimum vagy nem 255 a maximum)
+    # Normalizalas, eltolja az intenzitastartomanyt (ha nem 0 a minimum vagy nem 255 a maximum)
     b_interval = (b_max - b_min) * 1. / BinN
     Ig[:, :] = np.floor((Ig[:, :] - b_min) / b_interval)
 
@@ -344,7 +338,7 @@ def gradient_inverse_weighted(img, sigma, kernelsize):
     return denoised
 
 
-def GIW_new(img, sigma, kernelsize, isrepeat):
+def gradient_inverse_weighted_method_upgrade(img, sigma, kernelsize, isrepeat):
     image = img.copy()
     if not isrepeat:
         noisy = gaussian_noise(image, sigma)
@@ -374,14 +368,13 @@ def GIW_new(img, sigma, kernelsize, isrepeat):
                     continue
                 distance = imnoise[i + s, j + s] - imnoise[i, j]
                 delta = 1 / distance if distance > 0 else 2
-                # innentol van elteres az implementacioban, ez a NEW GIW mar
+                # Innentol van elteres az implementacioban, ez a tovabbfejlesztes
                 weight_square = ((delta / sum_delta) ** 2)
                 weight = delta / sum_delta
-                sum_weight += weight * imnoise[i + s, j + s]  # kepletben y(i, j)
-                sum_weight_square += weight_square  # ez a kepletben a D(i, j)
-                # K(i, j) = sum_weight_square / (1+sum_weight_square)
+                sum_weight += weight * imnoise[i + s, j + s]  # A kepletben ez y(i, j)
+                sum_weight_square += weight_square  # A kepletben a D(i, j)
 
-            kij = sum_weight_square / (1 + sum_weight_square)
+            kij = sum_weight_square / (1 + sum_weight_square)  # K(i, j) kiszamitasa
 
             denoised[i, j] = kij * imnoise[i, j] + ((1 - kij) * sum_weight)
 
@@ -407,12 +400,11 @@ def get_5x5_kernel(imnoise, i, j):
     return kernel
 
 
-# Image fidality metrics
+# Keposszehasonlito metrikak
 
 def psnr_function(original, denoised):
     mse = np.mean((original - denoised) ** 2)
-    if mse == 0:  # MSE is zero means no noise is present in the signal .
-        # Therefore PSNR have no importance.
+    if mse == 0:  # Ha az MSE 0, akkor nincs zaj a kepen, igy nincs ertelme az osszehasonlitasnak
         return 100
     max_pixel = 255.0
     psnr = 20 * log10(max_pixel / sqrt(mse))
@@ -421,16 +413,16 @@ def psnr_function(original, denoised):
 
 
 def ssim_function(original, denoised):
-    # Luminance factor
+    # Fenyessegi (luminance) faktor
     original_mean = np.mean(original)
     denoised_mean = np.mean(denoised)
-    # L = dynamic range of pixel values
+    # L = a pixelertekek dinamikus tartomanya
     l = 255
     k1 = 0.01  # TODO: milyen k ertek az ajanlott? "very small constant"
     c1 = (k1 * l) ** 2
     luminance = (2 * original_mean * denoised_mean + c1) / (original_mean ** 2 + denoised_mean ** 2 + c1)
 
-    # Contrast factor
+    # Kontraszt (contrast) faktor
     original_std = np.std(original)
     denoised_std = np.std(denoised)
 
@@ -438,15 +430,15 @@ def ssim_function(original, denoised):
     c2 = (k2 * l) ** 2
     contrast = (2 * original_std * denoised_std + c2) / (original_std ** 2 + denoised_std ** 2 + c2)
 
-    # Structural factor
+    # Strukturalis (structural) faktor
     k3 = 0.01
-    c3 = c2 / 2  # az egyszeruseg kedveert most c3 erteke legyen c2 / 2
+    c3 = c2 / 2  # Az egyszeruseg kedveert most c3 erteke legyen c2 / 2
 
     rows, cols = denoised.shape
     sum = 0
 
-    # if denoised.shape != original.shape:
-    #     raise ValueError('Different input image sizes!')
+    if denoised.shape != original.shape:
+        raise ValueError('Different input image sizes!')
 
     for i in range(0, rows):
         for j in range(0, cols):

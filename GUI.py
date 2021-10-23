@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget
 
 from gauss_noise_reduction import *
 
-# kepek beolvasasa es tombbe helyezese
+# Kepek beolvasasa es tombbe helyezese
 Lenna = cv2.imread('Lenna_(test_image).png', cv2.IMREAD_GRAYSCALE)
 cv2.imwrite('Lena_bw.jpg', Lenna)
 Lake = cv2.imread('Lake.jpg', cv2.IMREAD_GRAYSCALE)
@@ -18,8 +18,6 @@ images = {"Lenna": Lenna,
           "Wall": Wall}
 kernels = {"3x3": 1,
            "5x5 (time consuming)": 3}
-radiuses = {"1": 1,
-            "2": 2}
 range_sigmas = {"10": 10,
                 "20": 20,
                 "40": 40,
@@ -35,46 +33,38 @@ def window():
     win.setGeometry(200, 200, 300, 300)
     win.setWindowTitle("Menu")
     layout = QVBoxLayout()
-    # algorithm chooser
+    # Algoritmusvalaszto
     label1 = QtWidgets.QLabel()
     label1.setText("Algorithm: ")
     layout.addWidget(label1)
     comboBoxAlgorithm = QtWidgets.QComboBox(win)
     comboBoxAlgorithm.addItems(
-        ["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method NEW", "Bilateral",
+        ["Sigma", "Kuwahara", "Gradient inverse weighted method", "Gradient inverse weighted method upgrade",
+         "Bilateral",
          "Bilateral with integral histogram"])
     layout.addWidget(comboBoxAlgorithm)
-    # Sigma a zajosításhoz
+    # Sigma a zajositashoz
     label2 = QtWidgets.QLabel(win)
     label2.setText("Sigma value: ")
     layout.addWidget(label2)
     comboBoxSigma = QtWidgets.QComboBox(win)
     comboBoxSigma.addItems(["20", "40", "80"])
     layout.addWidget(comboBoxSigma)
-    # Kernel size
+    # Kernelmeret
     label4 = QtWidgets.QLabel(win)
     label4.setText("Kernel size: ")
     layout.addWidget(label4)
     comboBoxKernel = QtWidgets.QComboBox(win)
     comboBoxKernel.addItems(kernels)
     layout.addWidget(comboBoxKernel)
-    # input photo
+    # Input kep
     label3 = QtWidgets.QLabel(win)
     label3.setText("Input photo: ")
     layout.addWidget(label3)
     comboBoxInput = QtWidgets.QComboBox(win)
     comboBoxInput.addItems(images)
     layout.addWidget(comboBoxInput)
-    # radius
-    label5 = QtWidgets.QLabel(win)
-    label5.setText("Radius: ")
-    layout.addWidget(label5)
-    label5.hide()
-    comboBoxR = QtWidgets.QComboBox(win)
-    comboBoxR.addItems(radiuses)
-    layout.addWidget(comboBoxR)
-    comboBoxR.hide()
-    # range sigma
+    # Range sigma
     label6 = QtWidgets.QLabel(win)
     label6.setText("Range sigma: ")
     layout.addWidget(label6)
@@ -85,7 +75,7 @@ def window():
     sliderRangeSigma.setValue(40)
     layout.addWidget(sliderRangeSigma)
     sliderRangeSigma.hide()
-    # spatial sigma
+    # Spatial sigma
     label7 = QtWidgets.QLabel(win)
     label7.setText("Spatial sigma: ")
     layout.addWidget(label7)
@@ -105,7 +95,7 @@ def window():
     comboBoxGIWRepeat.addItems(["1", "2", "3"])
     layout.addWidget(comboBoxGIWRepeat)
     comboBoxGIWRepeat.hide()
-    # run button
+    # Futtatas
     btnRun = QtWidgets.QPushButton(win)
     btnRun.setText("Run algorithm")
     btnRun.setCheckable(True)
@@ -114,8 +104,6 @@ def window():
 
     def update_window():
         comboBoxKernel.clear()
-        label5.hide()
-        comboBoxR.hide()
         label4.show()
         comboBoxKernel.show()
         label6.hide()
@@ -126,7 +114,7 @@ def window():
         comboBoxGIWRepeat.hide()
         if comboBoxAlgorithm.currentText() == "Kuwahara":
             comboBoxKernel.addItem("5x5 (time consuming)")
-        elif comboBoxAlgorithm.currentText() == "Gradient inverse weighted method NEW":
+        elif comboBoxAlgorithm.currentText() == "Gradient inverse weighted method upgrade":
             comboBoxKernel.addItems(kernels)
             label8.show()
             comboBoxGIWRepeat.show()
@@ -175,19 +163,19 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
         final = bilateral(images[inputphoto], sigma, kernels[kernelsize], range_sigma,
                           space_sigmaparam)
         cv2.imwrite('bilateral.jpg', final)
-    elif algorithm == "Gradient inverse weighted method NEW":
+    elif algorithm == "Gradient inverse weighted method upgrade":
         if giw_repeat_times == "1":
-            final = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
+            final = gradient_inverse_weighted_method_upgrade(images[inputphoto], sigma, kernels[kernelsize], False)
             cv2.imwrite('giw_new.jpg', final)
         elif giw_repeat_times == "2":
-            first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
-            final = GIW_new(first, sigma, kernels[kernelsize],
-                            True)
+            first = gradient_inverse_weighted_method_upgrade(images[inputphoto], sigma, kernels[kernelsize], False)
+            final = gradient_inverse_weighted_method_upgrade(first, sigma, kernels[kernelsize],
+                                                             True)
             cv2.imwrite('giw_new.jpg', final)
         else:
-            first = GIW_new(images[inputphoto], sigma, kernels[kernelsize], False)
-            second = GIW_new(first, sigma, kernels[kernelsize], True)
-            final = GIW_new(second, sigma, kernels[kernelsize], True)
+            first = gradient_inverse_weighted_method_upgrade(images[inputphoto], sigma, kernels[kernelsize], False)
+            second = gradient_inverse_weighted_method_upgrade(first, sigma, kernels[kernelsize], True)
+            final = gradient_inverse_weighted_method_upgrade(second, sigma, kernels[kernelsize], True)
             cv2.imwrite('giw_new.jpg', final)
     elif algorithm == "Bilateral with integral histogram":
         final = new_bilateral(images[inputphoto], sigma, kernels[kernelsize])
@@ -195,13 +183,6 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     cv2.imshow('Image after denoising', final)
 
 
-black = cv2.imread("black.jpg")
-white = cv2.imread("white.jpg")
-noisy = cv2.imread("kuwahara_noised.jpg")
-denoised_sigma = cv2.imread("kuwahara_denoised.jpg")
-# print("Noised image shape: ", noisy.shape)
-# print("Denoised sigma shape: ", denoised_sigma.shape)
-# ssim_function(noisy, denoised_sigma)
 window()
 cv2.waitKey(0)
 cv2.destroyAllWindows()
