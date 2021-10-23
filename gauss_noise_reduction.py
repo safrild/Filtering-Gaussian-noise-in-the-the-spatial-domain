@@ -35,6 +35,7 @@ def gaussian_noise(img, sigma):
     return imnoise
 
 
+# Zajszuro algoritmusok
 def kuwahara(img, sigma):
     image = img.copy()
 
@@ -112,15 +113,15 @@ def sigmaAlgorithm(img, sigma, kernelsize):
     print('Applying the filter...')
     for i in range(2, rows):
         for j in range(2, cols):
-            sum = 0
+            sumofvalues = 0
             count = 0
             # Kernelmeret: (2n + 1, 2m + 1)
             for k in range(-1 * kernelsize, 1 * kernelsize + 1):
                 for l in range(-1 * kernelsize, 1 * kernelsize + 1):
                     if imnoise[i, j] - 2 * sigma < imnoise[i + k, j + l] < imnoise[i, j] + 2 * sigma:
-                        sum = sum + imnoise[i + k, j + l]
+                        sumofvalues = sumofvalues + imnoise[i + k, j + l]
                         count += 1
-            average = round(sum / count, 4)
+            average = round(sumofvalues / count, 4)
             image_to_denoise[i, j] = average
     denoised = np.uint8(image_to_denoise)
 
@@ -130,176 +131,7 @@ def sigmaAlgorithm(img, sigma, kernelsize):
     return denoised
 
 
-def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
-    image = img.copy()
-    noised = gaussian_noise(image, sigma)
-    filtered = np.zeros([noised.shape[0], noised.shape[1]])
-    imnoise = border_padding(noised, 2)
-    imnoise = np.float32(imnoise)
-    filtered = np.float32(filtered)
-
-    # 1. lepes: Beallitjuk a spatial_sigma es a range_sigma ertekeit
-
-    print("Spatial sigma: ", space_sigma)
-
-    print("Range szigma: ", range_sigma)
-
-    # A range_szigma csokkentése mellett erosodik a szuro elmegorzo jellege
-    # A space_szigma novekedesevel pedig erosodik a szuro simito hatasa
-
-    rows, cols = imnoise.shape
-    print('Applying the filter...')
-
-    # 2. lepes: Eloallitjuk a gauss kernelt
-
-    xdir_gauss = cv2.getGaussianKernel(5, space_sigma)
-    gaussian_kernel = np.multiply(xdir_gauss.T, xdir_gauss)
-    print("Kernel: \n", gaussian_kernel)
-
-    for i in range(2, rows - 2):
-        for j in range(2, cols - 2):
-
-            p_value = 0.0
-            weight = 0.0
-
-            m = kernelsize // 2
-            n = kernelsize // 2
-
-            # 5x5-os a kernel eseten -2-tol 2-ig fut
-            for x in range(i - m, i + m + 1):
-                for y in range(j - n, j + n + 1):
-
-                    # space weight
-                    space_weight = gaussian_kernel[x - i + 2, y - j + 2]
-
-                    # range weight
-                    range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
-
-                    # Osszeszorozzuk ezt a ket sulyerteket a pixelintenzitassal es hozzaadjuk a p ertekehez
-                    p_value += (space_weight * range_weight * imnoise[x, y])
-                    weight += (space_weight * range_weight)
-
-            # Normalizaljuk a p erteket
-            p_value = p_value / weight
-            filtered[i - 2, j - 2] = p_value
-
-    filtered = np.uint8(filtered)
-    psnr_function(image, filtered)
-    ssim_function(image, filtered)
-    print('Filter applied!\n')
-    return filtered
-
-
-def bilateral_with_integral_histogram(img, sigma, kernelsize):
-    image = img.copy()
-    noised = gaussian_noise(image, sigma)
-    filtered = np.zeros([noised.shape[0], noised.shape[1]])
-    imnoise = border_padding(noised, 2)
-    imnoise = np.float32(imnoise)
-    filtered = np.float32(filtered)
-
-    integral_histogram = SHcomp(imnoise, 2, 256)
-
-    range_szigma = 50
-
-    rows, cols = imnoise.shape
-    print('Applying the filter...')
-
-    # legyen 5x5-os kernel most
-    kernel_s = kernelsize
-
-    for i in range(2, rows - 2):
-        for j in range(2, cols - 2):
-
-            weight = 0.0
-            normalizalashoz = 0.0
-            intenzitas_darabszam_dict = {}
-
-            m = kernel_s // 2
-            n = kernel_s // 2
-
-            for x in range(i - m, i + m + 1):
-                for y in range(j - n, j + n + 1):
-                    aktualis_intenzitasertek = imnoise[x, y].astype(int)
-
-                    aktualis_intenzitasertek_darabszama = integral_histogram[i][j][aktualis_intenzitasertek]
-
-                    intenzitas_darabszam_dict[aktualis_intenzitasertek] = aktualis_intenzitasertek_darabszama
-
-                    range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_szigma ** 2)))
-
-                    szorzat = intenzitas_darabszam_dict[
-                                  aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight
-
-                    normalizalashoz += (szorzat * imnoise[x, y])
-                    weight += szorzat
-
-            # Normalizaljuk a sulyerteket
-            suly = normalizalashoz / weight
-            filtered[i - 2, j - 2] = suly
-
-    filtered = np.uint8(filtered)
-    print('Filter applied!\n')
-    psnr_function(image, filtered)
-    ssim_function(image, filtered)
-    return filtered
-
-
-def SHcomp(Ig, ws, BinN=11):
-    """
-    Compute local spectral histogram using integral histograms
-    :param Ig: a n-band image
-    :param ws: half window size
-    :param BinN: number of bins of histograms
-    :return: local spectral histogram at each pixel
-    """
-    h, w = Ig.shape
-    bn = 1
-    # quantize values at each pixel into bin ID
-    b_max = np.max(Ig[:, :])
-    b_min = np.min(Ig[:, :])
-
-    # Normalizalas, eltolja az intenzitastartomanyt (ha nem 0 a minimum vagy nem 255 a maximum)
-    b_interval = (b_max - b_min) * 1. / BinN
-    Ig[:, :] = np.floor((Ig[:, :] - b_min) / b_interval)
-
-    Ig[Ig >= BinN] = BinN - 1
-    Ig = np.int32(Ig)
-
-    # convert to one hot encoding
-    one_hot_pix = []
-    one_hot_pix_b = np.zeros((h * w, BinN), dtype=np.int32)
-    one_hot_pix_b[np.arange(h * w), Ig[:, :].flatten()] = 1
-    one_hot_pix.append(one_hot_pix_b.reshape((h, w, BinN)))
-
-    # compute integral histogram
-    integral_hist = np.concatenate(one_hot_pix, axis=2)
-
-    np.cumsum(integral_hist, axis=1, out=integral_hist, dtype=np.float32)
-    np.cumsum(integral_hist, axis=0, out=integral_hist, dtype=np.float32)
-
-    # compute spectral histogram based on integral histogram
-    padding_l = np.zeros((h, ws + 1, BinN * bn), dtype=np.int32)
-    padding_r = np.tile(integral_hist[:, -1:, :], (1, ws, 1))
-
-    integral_hist_pad_tmp = np.concatenate([padding_l, integral_hist, padding_r], axis=1)
-
-    padding_t = np.zeros((ws + 1, integral_hist_pad_tmp.shape[1], BinN * bn), dtype=np.int32)
-    padding_b = np.tile(integral_hist_pad_tmp[-1:, :, :], (ws, 1, 1))
-
-    integral_hist_pad = np.concatenate([padding_t, integral_hist_pad_tmp, padding_b], axis=0)
-
-    integral_hist_1 = integral_hist_pad[ws + 1 + ws:, ws + 1 + ws:, :]
-    integral_hist_2 = integral_hist_pad[:-ws - ws - 1, :-ws - ws - 1, :]
-    integral_hist_3 = integral_hist_pad[ws + 1 + ws:, :-ws - ws - 1, :]
-    integral_hist_4 = integral_hist_pad[:-ws - ws - 1, ws + 1 + ws:, :]
-
-    sh_mtx = integral_hist_1 + integral_hist_2 - integral_hist_3 - integral_hist_4
-
-    return sh_mtx
-
-
-def gradient_inverse_weighted(img, sigma, kernelsize):
+def gradient_inverse_weighted_method(img, sigma, kernelsize):
     image = img.copy()
     noisy = gaussian_noise(image, sigma)
     imnoise = border_padding(noisy, 1)
@@ -383,6 +215,171 @@ def gradient_inverse_weighted_method_upgrade(img, sigma, kernelsize, isrepeat):
     return denoised
 
 
+def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
+    image = img.copy()
+    noised = gaussian_noise(image, sigma)
+    filtered = np.zeros([noised.shape[0], noised.shape[1]])
+    imnoise = border_padding(noised, 2)
+    imnoise = np.float32(imnoise)
+    filtered = np.float32(filtered)
+
+    # 1. lepes: Beallitjuk a spatial_sigma es a range_sigma ertekeit
+
+    print("Spatial sigma: ", space_sigma)
+
+    print("Range szigma: ", range_sigma)
+
+    # A range_szigma csokkentése mellett erosodik a szuro elmegorzo jellege
+    # A space_szigma novekedesevel pedig erosodik a szuro simito hatasa
+
+    rows, cols = imnoise.shape
+    print('Applying the filter...')
+
+    # 2. lepes: Eloallitjuk a gauss kernelt
+
+    xdir_gauss = cv2.getGaussianKernel(5, space_sigma)
+    gaussian_kernel = np.multiply(xdir_gauss.T, xdir_gauss)
+    print("Kernel: \n", gaussian_kernel)
+
+    for i in range(2, rows - 2):
+        for j in range(2, cols - 2):
+
+            p_value = 0.0
+            weight = 0.0
+
+            m = kernelsize // 2
+            n = kernelsize // 2
+
+            # 5x5-os a kernel eseten -2-tol 2-ig fut
+            for x in range(i - m, i + m + 1):
+                for y in range(j - n, j + n + 1):
+                    # space weight
+                    space_weight = gaussian_kernel[x - i + 2, y - j + 2]
+
+                    # range weight
+                    range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
+
+                    # Osszeszorozzuk ezt a ket sulyerteket a pixelintenzitassal es hozzaadjuk a p ertekehez
+                    p_value += (space_weight * range_weight * imnoise[x, y])
+                    weight += (space_weight * range_weight)
+
+            # Normalizaljuk a p erteket
+            p_value = p_value / weight
+            filtered[i - 2, j - 2] = p_value
+
+    filtered = np.uint8(filtered)
+    print('Filter applied!\n')
+    psnr_function(image, filtered)
+    ssim_function(image, filtered)
+    return filtered
+
+
+def bilateral_with_integral_histogram(img, sigma, kernelsize):
+    image = img.copy()
+    noised = gaussian_noise(image, sigma)
+    filtered = np.zeros([noised.shape[0], noised.shape[1]])
+    imnoise = border_padding(noised, 2)
+    imnoise = np.float32(imnoise)
+    filtered = np.float32(filtered)
+
+    integral_histogram = SHcomp(imnoise, 2, 256)
+
+    range_szigma = 50
+
+    rows, cols = imnoise.shape
+    print('Applying the filter...')
+
+    for i in range(2, rows - 2):
+        for j in range(2, cols - 2):
+
+            weight = 0.0
+            normalizalashoz = 0.0
+            intenzitas_darabszam_dict = {}
+
+            m = kernelsize // 2
+            n = kernelsize // 2
+
+            for x in range(i - m, i + m + 1):
+                for y in range(j - n, j + n + 1):
+                    aktualis_intenzitasertek = imnoise[x, y].astype(int)
+
+                    aktualis_intenzitasertek_darabszama = integral_histogram[i][j][aktualis_intenzitasertek]
+
+                    intenzitas_darabszam_dict[aktualis_intenzitasertek] = aktualis_intenzitasertek_darabszama
+
+                    range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_szigma ** 2)))
+
+                    szorzat = intenzitas_darabszam_dict[
+                                  aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight
+
+                    normalizalashoz += (szorzat * imnoise[x, y])
+                    weight += szorzat
+
+            # Normalizaljuk a sulyerteket
+            suly = normalizalashoz / weight
+            filtered[i - 2, j - 2] = suly
+
+    filtered = np.uint8(filtered)
+    print('Filter applied!\n')
+    psnr_function(image, filtered)
+    ssim_function(image, filtered)
+    return filtered
+
+
+def SHcomp(Ig, ws, BinN=11):
+    """
+    Compute local spectral histogram using integral histograms
+    :param Ig: a n-band image
+    :param ws: half window size
+    :param BinN: number of bins of histograms
+    :return: local spectral histogram at each pixel
+    """
+    h, w = Ig.shape
+    bn = 1
+    # quantize values at each pixel into bin ID
+    b_max = np.max(Ig[:, :])
+    b_min = np.min(Ig[:, :])
+
+    # Normalizalas, eltolja az intenzitastartomanyt (ha nem 0 a minimum vagy nem 255 a maximum)
+    b_interval = (b_max - b_min) * 1. / BinN
+    Ig[:, :] = np.floor((Ig[:, :] - b_min) / b_interval)
+
+    Ig[Ig >= BinN] = BinN - 1
+    Ig = np.int32(Ig)
+
+    # convert to one hot encoding
+    one_hot_pix = []
+    one_hot_pix_b = np.zeros((h * w, BinN), dtype=np.int32)
+    one_hot_pix_b[np.arange(h * w), Ig[:, :].flatten()] = 1
+    one_hot_pix.append(one_hot_pix_b.reshape((h, w, BinN)))
+
+    # compute integral histogram
+    integral_hist = np.concatenate(one_hot_pix, axis=2)
+
+    np.cumsum(integral_hist, axis=1, out=integral_hist, dtype=np.float32)
+    np.cumsum(integral_hist, axis=0, out=integral_hist, dtype=np.float32)
+
+    # compute spectral histogram based on integral histogram
+    padding_l = np.zeros((h, ws + 1, BinN * bn), dtype=np.int32)
+    padding_r = np.tile(integral_hist[:, -1:, :], (1, ws, 1))
+
+    integral_hist_pad_tmp = np.concatenate([padding_l, integral_hist, padding_r], axis=1)
+
+    padding_t = np.zeros((ws + 1, integral_hist_pad_tmp.shape[1], BinN * bn), dtype=np.int32)
+    padding_b = np.tile(integral_hist_pad_tmp[-1:, :, :], (ws, 1, 1))
+
+    integral_hist_pad = np.concatenate([padding_t, integral_hist_pad_tmp, padding_b], axis=0)
+
+    integral_hist_1 = integral_hist_pad[ws + 1 + ws:, ws + 1 + ws:, :]
+    integral_hist_2 = integral_hist_pad[:-ws - ws - 1, :-ws - ws - 1, :]
+    integral_hist_3 = integral_hist_pad[ws + 1 + ws:, :-ws - ws - 1, :]
+    integral_hist_4 = integral_hist_pad[:-ws - ws - 1, ws + 1 + ws:, :]
+
+    sh_mtx = integral_hist_1 + integral_hist_2 - integral_hist_3 - integral_hist_4
+
+    return sh_mtx
+
+
 # Keposszehasonlito metrikak
 
 def psnr_function(original, denoised):
@@ -418,16 +415,16 @@ def ssim_function(original, denoised):
     c3 = c2 / 2  # Az egyszeruseg kedveert most c3 erteke legyen c2 / 2
 
     rows, cols = denoised.shape
-    sum = 0
+    sumofvalues = 0
 
     if denoised.shape != original.shape:
         raise ValueError('Different input image sizes!')
 
     for i in range(0, rows):
         for j in range(0, cols):
-            sum += (original[i, j] - original_mean) * (denoised[i, j] - denoised_mean)
+            sumofvalues += (original[i, j] - original_mean) * (denoised[i, j] - denoised_mean)
 
-    structural_factor = 1 / (rows * cols - 1) * sum
+    structural_factor = 1 / (rows * cols - 1) * sumofvalues
 
     structure = (structural_factor + c3) / (original_std * denoised_std + c3)
 
@@ -436,6 +433,3 @@ def ssim_function(original, denoised):
     gamma = 1
     ssim = (luminance ** alpha) * (contrast ** beta) * (structure ** gamma)
     print("SSIM value: ", round(ssim, 4))
-
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
