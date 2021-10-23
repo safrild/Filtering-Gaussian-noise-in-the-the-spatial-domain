@@ -77,6 +77,7 @@ def kuwahara(img, sigma):
             devq3 = round(statistics.stdev(np.int32(Q3)), 4)
             devq4 = round(statistics.stdev(np.int32(Q4)), 4)
 
+            # means
             mean = {
                 'Q1': meanq1,
                 'Q2': meanq2,
@@ -84,6 +85,7 @@ def kuwahara(img, sigma):
                 'Q4': meanq4
             }
 
+            # deviations of regions
             deviation = {
                 'Q1': devq1,
                 'Q2': devq2,
@@ -91,12 +93,8 @@ def kuwahara(img, sigma):
                 'Q4': devq4
             }
 
-            # print('Deviations of regions:', deviation)
-            smallestdevregion = min(deviation, key=deviation.get)
-            # print('Region with smallest deviation: ', smallestdevregion)
-            meanofregion = mean[smallestdevregion]
-            # print('Means: ', mean)
-            # print('Mean of region with smallest dev: ', meanofregion)
+            smallestdevregion = min(deviation, key=deviation.get)  # region with smallest deviation
+            meanofregion = mean[smallestdevregion]  # mean of region with smallest deviation
 
             denoised[i, j] = meanofregion
 
@@ -165,7 +163,6 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
 
     for i in range(2, rows - 2):
         for j in range(2, cols - 2):
-            # print("i: ", i, "j: ", j)
 
             p_value = 0.0
             weight = 0.0
@@ -189,7 +186,6 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
                     weight += (space_weight * range_weight)
 
             # normalizaljuk a p erteket
-            # print("weight: ", weight)
             p_value = p_value / weight
             filtered[i - 2, j - 2] = p_value
 
@@ -209,20 +205,18 @@ def new_bilateral(img, sigma, kernelsize):
     filtered = np.float32(filtered)
 
     integral_histogram = SHcomp(imnoise, 2, 256)
-    # print(integral_histogram)
 
     range_szigma = 50
     # print("Range szigma: ", range_szigma)
 
     rows, cols = imnoise.shape
-    # print('Applying the filter...')
+    print('Applying the filter...')
 
     # legyen 5x5-os kernel most
     kernel_s = kernelsize
 
     for i in range(2, rows - 2):
         for j in range(2, cols - 2):
-            # print("i: ", i, "j: ", j)
 
             weight = 0.0
             normalizalashoz = 0.0
@@ -231,26 +225,19 @@ def new_bilateral(img, sigma, kernelsize):
             m = kernel_s // 2
             n = kernel_s // 2
 
-            # print(integral_histogram[i][j])
-
-            # ha 5x5-os a kernel, akkor ez -2-tol 2-ig fut
             for x in range(i - m, i + m + 1):
                 for y in range(j - n, j + n + 1):
                     aktualis_intenzitasertek = imnoise[x, y].astype(int)
-                    # print("Aktualisan vizsgalt intenzitas: ", aktualis_intenzitasertek)
 
                     aktualis_intenzitasertek_darabszama = integral_histogram[i][j][aktualis_intenzitasertek]
-                    # print("Darabszam: ", aktualis_intenzitasertek_darabszama)
 
                     intenzitas_darabszam_dict[aktualis_intenzitasertek] = aktualis_intenzitasertek_darabszama
-                    # print(intenzitas_darabszam_dict)
 
                     # Ezzel szamoljuk ki a g-s reszt
                     range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_szigma ** 2)))
 
                     szorzat = intenzitas_darabszam_dict[
                                   aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight
-                    # print(szorzat)
 
                     normalizalashoz += (szorzat * imnoise[x, y])
                     weight += szorzat
@@ -424,7 +411,6 @@ def get_5x5_kernel(imnoise, i, j):
 
 def psnr_function(original, denoised):
     mse = np.mean((original - denoised) ** 2)
-    # print("mse: ", mse)
     if mse == 0:  # MSE is zero means no noise is present in the signal .
         # Therefore PSNR have no importance.
         return 100
@@ -443,7 +429,6 @@ def ssim_function(original, denoised):
     k1 = 0.01  # TODO: milyen k ertek az ajanlott? "very small constant"
     c1 = (k1 * l) ** 2
     luminance = (2 * original_mean * denoised_mean + c1) / (original_mean ** 2 + denoised_mean ** 2 + c1)
-    # print("luminance: ", luminance)
 
     # Contrast factor
     original_std = np.std(original)
@@ -452,16 +437,13 @@ def ssim_function(original, denoised):
     k2 = 0.01
     c2 = (k2 * l) ** 2
     contrast = (2 * original_std * denoised_std + c2) / (original_std ** 2 + denoised_std ** 2 + c2)
-    # print("contrast: ", contrast)
 
     # Structural factor
-
     k3 = 0.01
     c3 = c2 / 2  # az egyszeruseg kedveert most c3 erteke legyen c2 / 2
 
     rows, cols = denoised.shape
     sum = 0
-    # print('rows and cols: ', rows, cols)
 
     # if denoised.shape != original.shape:
     #     raise ValueError('Different input image sizes!')
@@ -470,12 +452,9 @@ def ssim_function(original, denoised):
         for j in range(0, cols):
             sum += (original[i, j] - original_mean) * (denoised[i, j] - denoised_mean)
 
-    # print("sum: ", sum)
     structural_factor = 1 / (rows * cols - 1) * sum
-    # print("structural factor: ", structural_factor)
 
     structure = (structural_factor + c3) / (original_std * denoised_std + c3)
-    # print("structure: ", structure)
 
     alpha = 1
     beta = 1
