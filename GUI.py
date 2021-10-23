@@ -130,6 +130,12 @@ def window():
             comboBoxKernel.addItems(kernels)
             label8.show()
             comboBoxGIWRepeat.show()
+        elif comboBoxAlgorithm.currentText() == "Bilateral":
+            comboBoxKernel.addItems(kernels)
+            label6.show()
+            sliderRangeSigma.show()
+            label7.show()
+            sliderSpaceSigma.show()
         elif comboBoxAlgorithm.currentText() == "Bilateral with integral histogram":
             comboBoxKernel.addItem("5x5 (time consuming)")
         else:
