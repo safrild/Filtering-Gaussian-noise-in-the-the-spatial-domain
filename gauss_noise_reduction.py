@@ -31,7 +31,6 @@ def gaussian_noise(img, sigma):
     # Kirajzoljuk a zajjal terhelt kepet
     print('Gaussian noise added!')
     cv2.imshow('Image after noising', imnoise)
-    cv2.imwrite('noised_image.jpg', imnoise)
     return imnoise
 
 
@@ -284,7 +283,7 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
 
     integral_histogram = SHcomp(imnoise, 2, 256)
 
-    range_szigma = 50
+    range_sigma = 50
 
     rows, cols = imnoise.shape
     print('Applying the filter...')
@@ -307,7 +306,7 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
 
                     intenzitas_darabszam_dict[aktualis_intenzitasertek] = aktualis_intenzitasertek_darabszama
 
-                    range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_szigma ** 2)))
+                    range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
 
                     szorzat = intenzitas_darabszam_dict[
                                   aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight

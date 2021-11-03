@@ -6,14 +6,12 @@ from gauss_noise_reduction import *
 
 # Kepek beolvasasa es tombbe helyezese
 Lenna = cv2.imread('img/Lenna_(test_image).png', cv2.IMREAD_GRAYSCALE)
-Lake = cv2.imread('img/Lake.jpg', cv2.IMREAD_GRAYSCALE)
-Tower = cv2.imread('img/Tower.jpg', cv2.IMREAD_GRAYSCALE)
-Wall = cv2.imread('img/Wall.jpg', cv2.IMREAD_GRAYSCALE)
-Lake256 = cv2.imread('img/Lake_256.jpg', cv2.IMREAD_GRAYSCALE)
+Chemical_plant = cv2.imread('img/chemical_plant.tiff', cv2.IMREAD_GRAYSCALE)
+Clock = cv2.imread('img/clock.tiff', cv2.IMREAD_GRAYSCALE)
+Wall = cv2.imread('img/brick_wall.tiff', cv2.IMREAD_GRAYSCALE)
 images = {"Lenna": Lenna,
-          "Lake": Lake,
-          "Lake256": Lake256,
-          "Tower": Tower,
+          "Chemical plant": Chemical_plant,
+          "Clock": Clock,
           "Wall": Wall}
 kernels = {"3x3": 1,
            "5x5 (time consuming)": 3}
@@ -71,7 +69,7 @@ def window():
     sliderRangeSigma = QtWidgets.QSlider(Qt.Horizontal)
     sliderRangeSigma.setMinimum(1)
     sliderRangeSigma.setMaximum(100)
-    sliderRangeSigma.setValue(40)
+    sliderRangeSigma.setValue(20)
     layout.addWidget(sliderRangeSigma)
     sliderRangeSigma.hide()
     # Spatial sigma
@@ -82,7 +80,7 @@ def window():
     sliderSpaceSigma = QtWidgets.QSlider(Qt.Horizontal)
     sliderSpaceSigma.setMinimum(1)
     sliderSpaceSigma.setMaximum(100)
-    sliderSpaceSigma.setValue(40)
+    sliderSpaceSigma.setValue(60)
     layout.addWidget(sliderSpaceSigma)
     sliderSpaceSigma.hide()
     # GIW_new tobbszori alkalmazas
@@ -149,34 +147,26 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     range_sigma = range_sigmaparam
     if algorithm == "Kuwahara":
         final = kuwahara(images[inputphoto], sigma)
-        cv2.imwrite('kuwahara_denoised.jpg', final)
     elif algorithm == "Gradient inverse weighted method":
         final = gradient_inverse_weighted_method(images[inputphoto], sigma, kernels[kernelsize])
-        cv2.imwrite('giw.jpg', final)
     elif algorithm == "Sigma":
         final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelsize])
-        cv2.imwrite('sigma.jpg', final)
     elif algorithm == "Bilateral":
         final = bilateral(images[inputphoto], sigma, kernels[kernelsize], range_sigma,
                           space_sigmaparam)
-        cv2.imwrite('bilateral.jpg', final)
     elif algorithm == "Gradient inverse weighted method upgrade":
         if giw_repeat_times == "1":
             final = gradient_inverse_weighted_method_upgrade(images[inputphoto], sigma, kernels[kernelsize], False)
-            cv2.imwrite('giw_new.jpg', final)
         elif giw_repeat_times == "2":
             first = gradient_inverse_weighted_method_upgrade(images[inputphoto], sigma, kernels[kernelsize], False)
             final = gradient_inverse_weighted_method_upgrade(first, sigma, kernels[kernelsize],
                                                              True)
-            cv2.imwrite('giw_new.jpg', final)
         else:
             first = gradient_inverse_weighted_method_upgrade(images[inputphoto], sigma, kernels[kernelsize], False)
             second = gradient_inverse_weighted_method_upgrade(first, sigma, kernels[kernelsize], True)
             final = gradient_inverse_weighted_method_upgrade(second, sigma, kernels[kernelsize], True)
-            cv2.imwrite('giw_new.jpg', final)
     elif algorithm == "Bilateral with integral histogram":
         final = bilateral_with_integral_histogram(images[inputphoto], sigma, kernels[kernelsize])
-        cv2.imwrite('bilateral_constant.jpg', final)
     cv2.imshow('Image after denoising', final)
 
 
