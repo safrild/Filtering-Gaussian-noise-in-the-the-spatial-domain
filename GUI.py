@@ -110,6 +110,7 @@ def window():
         label8.hide()
         comboBoxGIWRepeat.hide()
         if comboBoxAlgorithm.currentText() == "Kuwahara":
+            comboBoxKernel.clear()
             comboBoxKernel.addItem("5x5 (time consuming)")
         elif comboBoxAlgorithm.currentText() == "Gradient inverse weighted method upgrade":
             comboBoxKernel.addItems(kernels)
@@ -121,8 +122,6 @@ def window():
             sliderRangeSigma.show()
             label7.show()
             sliderSpaceSigma.show()
-        # elif comboBoxAlgorithm.currentText() == "Bilateral with integral histogram":
-        #     comboBoxKernel.addItem("5x5 (time consuming)")
         else:
             comboBoxKernel.addItems(kernels)
 
@@ -170,7 +169,8 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     print('Filter applied!\n')
     psnr_function(images[inputphoto], final)
     ssim_function(images[inputphoto], final)
-    cv2.imwrite('img/denoised images/%(algorithm)s_%(noise)s_%(kernel)s.jpg' % {"algorithm": algorithm, "noise": sigma, "kernel": kernelsize}, final)
+    # cv2.imwrite('img/denoised images/%(algorithm)s_%(noise)s_%(kernel)s.jpg' % {"algorithm": algorithm, "noise": sigma,
+    #                                                                             "kernel": kernelsize}, final)
     cv2.imshow('Image after denoising', final)
 
 

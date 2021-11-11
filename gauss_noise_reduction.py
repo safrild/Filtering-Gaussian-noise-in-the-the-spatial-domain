@@ -263,9 +263,11 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
 
     integral_histogram = SHcomp(imnoise, 2, 256)
 
-    range_sigma = 50
+    # range_sigma = 50
 
     rows, cols = imnoise.shape
+
+    lut = create_lut(3)  # LUT szamitasa 3x3 kernellel
 
     for i in range(2, rows - 2):
         for j in range(2, cols - 2):
@@ -274,7 +276,7 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
             normalizalashoz = 0.0
             intenzitas_darabszam_dict = {}
 
-            m = 3 // 2
+            m = 3 // 2  # LUT szamitashoz lefixaljuk egyelore 3x3-ra
             n = 3 // 2
 
             for x in range(i - m, i + m + 1):
@@ -285,22 +287,17 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
 
                     intenzitas_darabszam_dict[aktualis_intenzitasertek] = aktualis_intenzitasertek_darabszama
 
-                    range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
+                    # range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
 
-                    szorzat = intenzitas_darabszam_dict[
-                                  aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight
+                    # szorzat = intenzitas_darabszam_dict[
+                    #               aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight
 
-                    # lut = create_lut(3)
-                    # szorzat = lut[aktualis_intenzitasertek, np.uint8(range_weight), intenzitas_darabszam_dict[
-                    #     aktualis_intenzitasertek] - 1]
+                    szorzat = lut[aktualis_intenzitasertek, imnoise[i, j], intenzitas_darabszam_dict[
+                        aktualis_intenzitasertek]]
+                    print(szorzat)
 
                     normalizalashoz += (szorzat * imnoise[x, y])
                     weight += szorzat
-                    # print('aktualis int ', aktualis_intenzitasertek)
-                    # print('range weight ', np.uint8(range_weight))
-                    # print('intenzitas darabszam ', intenzitas_darabszam_dict[aktualis_intenzitasertek])
-                    # print(lut[aktualis_intenzitasertek, np.uint8(range_weight), intenzitas_darabszam_dict[
-                    #     aktualis_intenzitasertek] - 1])
 
             # Normalizaljuk a sulyerteket
             suly = normalizalashoz / weight
@@ -364,16 +361,20 @@ def SHcomp(Ig, ws, BinN=11):
     return sh_mtx
 
 
-# # Segedszamitas a Modositott bilateralis algoritmushoz
-#
-# def create_lut(kernelsize):
-#     lut_array = np.ndarray((256, 256, kernelsize * kernelsize), np.float32)
-#     for x in range(0, lut_array.shape[0]):
-#         for y in range(0, lut_array.shape[1]):
-#             for z in range(0, lut_array.shape[2]):
-#                 lut_array[x, y, z] = x * y * z
-#     return lut_array
-#
+# Segedszamitas a Modositott bilateralis algoritmushoz
+
+def create_lut(kernelsize):
+    range_sigma = 50
+    lut_array = np.ndarray((256, 256, kernelsize * kernelsize), np.float32)
+    for x in range(0, lut_array.shape[0]):  # i - imnoise[x, y]
+        for y in range(0, lut_array.shape[1]):  # I(p) - imnoise[i, j]
+            for z in range(0, lut_array.shape[2]):  # h_p(i)
+                # range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
+                range_weight = math.exp(-((y - x) ** 2 / (2 * range_sigma ** 2)))  # g(I(p)-i)
+                lut_array[x, y, z] = x * z * range_weight
+                # print(lut_array[x, y, z])
+    return lut_array
+
 
 # Keposszehasonlito metrikak
 
@@ -407,7 +408,7 @@ def ssim_function(original, denoised):
 
     # Strukturalis (structural) faktor
     k3 = 0.01
-    c3 = c2 / 2  # Az egyszeruseg kedveert most c3 erteke legyen c2 / 2
+    c3 = c2 / 2  # Az egyszeruseg kedveert c3 erteke legyen c2 / 2
 
     rows, cols = denoised.shape
     sumofvalues = 0
