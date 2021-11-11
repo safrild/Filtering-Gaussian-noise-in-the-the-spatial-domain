@@ -167,6 +167,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
             final = gradient_inverse_weighted_method_upgrade(second, sigma, kernels[kernelsize], True)
     elif algorithm == "Bilateral with integral histogram":
         final = bilateral_with_integral_histogram(images[inputphoto], sigma, kernels[kernelsize])
+    cv2.imwrite('img/denoised images/%(algorithm)s_%(noise)s_%(kernel)s.jpg' % {"algorithm": algorithm, "noise": sigma, "kernel": kernelsize}, final)
     cv2.imshow('Image after denoising', final)
 
 

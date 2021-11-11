@@ -295,8 +295,8 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
             normalizalashoz = 0.0
             intenzitas_darabszam_dict = {}
 
-            m = kernelsize // 2
-            n = kernelsize // 2
+            m = 3 // 2
+            n = 3 // 2
 
             for x in range(i - m, i + m + 1):
                 for y in range(j - n, j + n + 1):
@@ -311,8 +311,17 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
                     szorzat = intenzitas_darabszam_dict[
                                   aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight
 
+                    # lut = create_lut(3)
+                    # szorzat = lut[aktualis_intenzitasertek, np.uint8(range_weight), intenzitas_darabszam_dict[
+                    #     aktualis_intenzitasertek] - 1]
+
                     normalizalashoz += (szorzat * imnoise[x, y])
                     weight += szorzat
+                    # print('aktualis int ', aktualis_intenzitasertek)
+                    # print('range weight ', np.uint8(range_weight))
+                    # print('intenzitas darabszam ', intenzitas_darabszam_dict[aktualis_intenzitasertek])
+                    # print(lut[aktualis_intenzitasertek, np.uint8(range_weight), intenzitas_darabszam_dict[
+                    #     aktualis_intenzitasertek] - 1])
 
             # Normalizaljuk a sulyerteket
             suly = normalizalashoz / weight
@@ -378,6 +387,17 @@ def SHcomp(Ig, ws, BinN=11):
 
     return sh_mtx
 
+
+# # Segedszamitas a Modositott bilateralis algoritmushoz
+#
+# def create_lut(kernelsize):
+#     lut_array = np.ndarray((256, 256, kernelsize * kernelsize), np.float32)
+#     for x in range(0, lut_array.shape[0]):
+#         for y in range(0, lut_array.shape[1]):
+#             for z in range(0, lut_array.shape[2]):
+#                 lut_array[x, y, z] = x * y * z
+#     return lut_array
+#
 
 # Keposszehasonlito metrikak
 
