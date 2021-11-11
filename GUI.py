@@ -144,7 +144,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     print("Deviation of the additive noise: ", sigmaparam)
     print("\n")
     sigma = int(sigmaparam)
-    range_sigma = range_sigmaparam
+    print('Applying the filter...')
     if algorithm == "Kuwahara":
         final = kuwahara(images[inputphoto], sigma)
     elif algorithm == "Gradient inverse weighted method":
@@ -152,7 +152,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     elif algorithm == "Sigma":
         final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelsize])
     elif algorithm == "Bilateral":
-        final = bilateral(images[inputphoto], sigma, kernels[kernelsize], range_sigma,
+        final = bilateral(images[inputphoto], sigma, kernels[kernelsize], range_sigmaparam,
                           space_sigmaparam)
     elif algorithm == "Gradient inverse weighted method upgrade":
         if giw_repeat_times == "1":
@@ -167,6 +167,9 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
             final = gradient_inverse_weighted_method_upgrade(second, sigma, kernels[kernelsize], True)
     elif algorithm == "Bilateral with integral histogram":
         final = bilateral_with_integral_histogram(images[inputphoto], sigma, kernels[kernelsize])
+    print('Filter applied!\n')
+    psnr_function(images[inputphoto], final)
+    ssim_function(images[inputphoto], final)
     cv2.imwrite('img/denoised images/%(algorithm)s_%(noise)s_%(kernel)s.jpg' % {"algorithm": algorithm, "noise": sigma, "kernel": kernelsize}, final)
     cv2.imshow('Image after denoising', final)
 

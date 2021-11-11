@@ -47,7 +47,6 @@ def kuwahara(img, sigma):
 
     denoised = noisy.copy()
 
-    print('Applying the filter...')
     for i in range(2, rows):
         for j in range(2, cols):
             Q1 = [imnoise[i - 2, j - 2], imnoise[i - 2, j - 1], imnoise[i - 2, j],
@@ -96,9 +95,6 @@ def kuwahara(img, sigma):
 
             denoised[i, j] = meanofregion
 
-    print('Filter applied!\n')
-    psnr_function(image, denoised)
-    ssim_function(image, denoised)
     return denoised
 
 
@@ -109,7 +105,6 @@ def sigmaAlgorithm(img, sigma, kernelsize):
     image_to_denoise = np.float32(noisy)
     imnoise = np.float32(imnoise)
     rows, cols = image_to_denoise.shape
-    print('Applying the filter...')
     for i in range(2, rows):
         for j in range(2, cols):
             sumofvalues = 0
@@ -124,9 +119,6 @@ def sigmaAlgorithm(img, sigma, kernelsize):
             image_to_denoise[i, j] = average
     denoised = np.uint8(image_to_denoise)
 
-    print('Filter applied!\n')
-    psnr_function(image, denoised)
-    ssim_function(image, denoised)
     return denoised
 
 
@@ -137,7 +129,6 @@ def gradient_inverse_weighted_method(img, sigma, kernelsize):
     denoised = np.float32(noisy)
     imnoise = np.float32(imnoise)
     rows, cols = denoised.shape
-    print('Applying the filter...')
 
     for i in range(1, rows):
         for j in range(1, cols):
@@ -161,9 +152,6 @@ def gradient_inverse_weighted_method(img, sigma, kernelsize):
             denoised[i, j] = 0.5 * imnoise[i, j] + 0.5 * sum_weight
 
     denoised = np.uint8(denoised)
-    print('Filter applied!\n')
-    psnr_function(image, denoised)
-    ssim_function(image, denoised)
     return denoised
 
 
@@ -179,7 +167,6 @@ def gradient_inverse_weighted_method_upgrade(img, sigma, kernelsize, isrepeat):
     imnoise = np.float32(imnoise)
     imnoise = border_padding(imnoise, kernelsize)
     rows, cols = denoised.shape
-    print('Applying the filter...')
     for i in range(0, rows):
         for j in range(0, cols):
             sum_delta = 0
@@ -208,9 +195,6 @@ def gradient_inverse_weighted_method_upgrade(img, sigma, kernelsize, isrepeat):
             denoised[i, j] = kij * imnoise[i, j] + ((1 - kij) * sum_weight)
 
     denoised = np.uint8(denoised)
-    print('Filter applied!\n')
-    psnr_function(image, denoised)
-    ssim_function(image, denoised)
     return denoised
 
 
@@ -232,7 +216,6 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
     # A space_szigma novekedesevel pedig erosodik a szuro simito hatasa
 
     rows, cols = imnoise.shape
-    print('Applying the filter...')
 
     # 2. lepes: Eloallitjuk a gauss kernelt
 
@@ -267,9 +250,6 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
             filtered[i - 2, j - 2] = p_value
 
     filtered = np.uint8(filtered)
-    print('Filter applied!\n')
-    psnr_function(image, filtered)
-    ssim_function(image, filtered)
     return filtered
 
 
@@ -286,7 +266,6 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
     range_sigma = 50
 
     rows, cols = imnoise.shape
-    print('Applying the filter...')
 
     for i in range(2, rows - 2):
         for j in range(2, cols - 2):
@@ -328,9 +307,6 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
             filtered[i - 2, j - 2] = suly
 
     filtered = np.uint8(filtered)
-    print('Filter applied!\n')
-    psnr_function(image, filtered)
-    ssim_function(image, filtered)
     return filtered
 
 
