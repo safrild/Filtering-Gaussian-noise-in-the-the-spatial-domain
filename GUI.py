@@ -176,10 +176,6 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     cv2.imshow('Image after denoising', final)
 
 
-# lut = create_lut(3)
-# asd = 1
-# print(type(asd))
-# print(lut[asd, asd, asd])
 window()
 cv2.waitKey(0)
 cv2.destroyAllWindows()

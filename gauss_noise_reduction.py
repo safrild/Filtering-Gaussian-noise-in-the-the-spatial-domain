@@ -263,8 +263,6 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
 
     integral_histogram = SHcomp(imnoise, kernelsize // 2, 256)
 
-    # range_sigma = 50
-
     rows, cols = imnoise.shape
 
     lut = create_lut(kernelsize)  # LUT keszitese
@@ -286,11 +284,6 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
                     aktualis_intenzitasertek_darabszama = integral_histogram[i][j][aktualis_intenzitasertek]
 
                     intenzitas_darabszam_dict[aktualis_intenzitasertek] = aktualis_intenzitasertek_darabszama
-
-                    # range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
-
-                    # szorzat = intenzitas_darabszam_dict[
-                    #               aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight
 
                     lut_i = int(aktualis_intenzitasertek)
                     lut_ip = int(imnoise[i, j].item())
@@ -371,10 +364,8 @@ def create_lut(kernelsize):
     for x in range(0, lut_array.shape[0]):  # i = imnoise[x, y]
         for y in range(0, lut_array.shape[1]):  # I(p) = imnoise[i, j]
             for z in range(1, lut_array.shape[2]):  # h_p(i)
-                # range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
                 range_weight = math.exp(-((y - x) ** 2 / (2 * range_sigma ** 2)))  # g(I(p)-i)
                 lut_array[x, y, z] = np.round(x * z * range_weight, 8)
-
     return lut_array
 
 
