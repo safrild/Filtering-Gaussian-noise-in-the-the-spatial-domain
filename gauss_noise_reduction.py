@@ -366,8 +366,8 @@ def SHcomp(Ig, ws, BinN=11):
 def create_lut(kernelsize):
     range_sigma = 50
     lut_array = np.ndarray((256, 256, kernelsize * kernelsize), np.float32)
-    for x in range(0, lut_array.shape[0]):  # i - imnoise[x, y]
-        for y in range(0, lut_array.shape[1]):  # I(p) - imnoise[i, j]
+    for x in range(0, lut_array.shape[0]):  # i = imnoise[x, y]
+        for y in range(0, lut_array.shape[1]):  # I(p) = imnoise[i, j]
             for z in range(0, lut_array.shape[2]):  # h_p(i)
                 # range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
                 range_weight = math.exp(-((y - x) ** 2 / (2 * range_sigma ** 2)))  # g(I(p)-i)
