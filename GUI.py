@@ -15,6 +15,8 @@ images = {"Lenna": Lenna,
           "Wall": Wall}
 kernels = {"3x3": 1,
            "5x5 (time consuming)": 3}
+fullkernels = {"3x3": 3,
+               "5x5 (time consuming)": 5}
 range_sigmas = {"10": 10,
                 "20": 20,
                 "40": 40,
@@ -165,7 +167,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
             second = gradient_inverse_weighted_method_upgrade(first, sigma, kernels[kernelsize], True)
             final = gradient_inverse_weighted_method_upgrade(second, sigma, kernels[kernelsize], True)
     elif algorithm == "Bilateral with integral histogram":
-        final = bilateral_with_integral_histogram(images[inputphoto], sigma, kernels[kernelsize])
+        final = bilateral_with_integral_histogram(images[inputphoto], sigma, fullkernels[kernelsize])
     print('Filter applied!\n')
     psnr_function(images[inputphoto], final)
     ssim_function(images[inputphoto], final)
@@ -174,6 +176,10 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     cv2.imshow('Image after denoising', final)
 
 
+# lut = create_lut(3)
+# asd = 1
+# print(type(asd))
+# print(lut[asd, asd, asd])
 window()
 cv2.waitKey(0)
 cv2.destroyAllWindows()

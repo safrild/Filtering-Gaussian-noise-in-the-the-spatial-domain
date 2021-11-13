@@ -261,13 +261,13 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
     imnoise = np.float32(imnoise)
     filtered = np.float32(filtered)
 
-    integral_histogram = SHcomp(imnoise, 2, 256)
+    integral_histogram = SHcomp(imnoise, kernelsize // 2, 256)
 
     # range_sigma = 50
 
     rows, cols = imnoise.shape
 
-    lut = create_lut(3)  # LUT szamitasa 3x3 kernellel
+    lut = create_lut(kernelsize)  # LUT keszitese
 
     for i in range(2, rows - 2):
         for j in range(2, cols - 2):
@@ -276,8 +276,8 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
             normalizalashoz = 0.0
             intenzitas_darabszam_dict = {}
 
-            m = 3 // 2  # LUT szamitashoz lefixaljuk egyelore 3x3-ra
-            n = 3 // 2
+            m = kernelsize // 2
+            n = kernelsize // 2
 
             for x in range(i - m, i + m + 1):
                 for y in range(j - n, j + n + 1):
@@ -292,9 +292,11 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
                     # szorzat = intenzitas_darabszam_dict[
                     #               aktualis_intenzitasertek] * aktualis_intenzitasertek * range_weight
 
-                    szorzat = lut[aktualis_intenzitasertek, imnoise[i, j], intenzitas_darabszam_dict[
-                        aktualis_intenzitasertek]]
-                    print(szorzat)
+                    lut_i = int(aktualis_intenzitasertek)
+                    lut_ip = int(imnoise[i, j].item())
+                    lut_hpi = int(aktualis_intenzitasertek_darabszama)
+
+                    szorzat = lut[lut_i, lut_ip, lut_hpi]
 
                     normalizalashoz += (szorzat * imnoise[x, y])
                     weight += szorzat
@@ -365,14 +367,14 @@ def SHcomp(Ig, ws, BinN=11):
 
 def create_lut(kernelsize):
     range_sigma = 50
-    lut_array = np.ndarray((256, 256, kernelsize * kernelsize), np.float32)
+    lut_array = np.ndarray((256, 256, kernelsize * kernelsize + 1), np.float32)
     for x in range(0, lut_array.shape[0]):  # i = imnoise[x, y]
         for y in range(0, lut_array.shape[1]):  # I(p) = imnoise[i, j]
-            for z in range(0, lut_array.shape[2]):  # h_p(i)
+            for z in range(1, lut_array.shape[2]):  # h_p(i)
                 # range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
                 range_weight = math.exp(-((y - x) ** 2 / (2 * range_sigma ** 2)))  # g(I(p)-i)
-                lut_array[x, y, z] = x * z * range_weight
-                # print(lut_array[x, y, z])
+                lut_array[x, y, z] = np.round(x * z * range_weight, 8)
+
     return lut_array
 
 
