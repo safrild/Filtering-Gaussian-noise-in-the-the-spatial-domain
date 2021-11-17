@@ -4,6 +4,7 @@ import sys
 
 import cv2 as cv2
 import numpy as np
+import time
 
 from math import log10, sqrt
 
@@ -202,14 +203,14 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
     image = img.copy()
     noised = gaussian_noise(image, sigma)
     filtered = np.zeros([noised.shape[0], noised.shape[1]])
-    imnoise = border_padding(noised, 2)
+    half_kernelsize = kernelsize // 2
+    imnoise = border_padding(noised, half_kernelsize)
     imnoise = np.float32(imnoise)
     filtered = np.float32(filtered)
 
     # 1. lepes: Beallitjuk a spatial_sigma es a range_sigma ertekeit
 
     print("Spatial sigma: ", space_sigma)
-
     print("Range szigma: ", range_sigma)
 
     # A range_szigma csokkentése mellett erosodik a szuro elmegorzo jellege
@@ -219,24 +220,25 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
 
     # 2. lepes: Eloallitjuk a gauss kernelt
 
-    xdir_gauss = cv2.getGaussianKernel(5, space_sigma)
+    xdir_gauss = cv2.getGaussianKernel(kernelsize, space_sigma)
     gaussian_kernel = np.multiply(xdir_gauss.T, xdir_gauss)
     print("Kernel: \n", gaussian_kernel)
 
-    for i in range(2, rows - 2):
-        for j in range(2, cols - 2):
+    start_time = time.perf_counter()
+    for i in range(half_kernelsize, rows - half_kernelsize):
+        for j in range(half_kernelsize, cols - half_kernelsize):
 
             p_value = 0.0
             weight = 0.0
 
-            m = kernelsize // 2
-            n = kernelsize // 2
+            m = half_kernelsize
+            n = half_kernelsize
 
             # 5x5-os a kernel eseten -2-tol 2-ig fut
             for x in range(i - m, i + m + 1):
                 for y in range(j - n, j + n + 1):
                     # space weight
-                    space_weight = gaussian_kernel[x - i + 2, y - j + 2]
+                    space_weight = gaussian_kernel[x - i + half_kernelsize, y - j + half_kernelsize]
 
                     # range weight
                     range_weight = math.exp(-((imnoise[i, j] - imnoise[x, y]) ** 2 / (2 * range_sigma ** 2)))
@@ -247,8 +249,10 @@ def bilateral(img, sigma, kernelsize, range_sigma, space_sigma):
 
             # Normalizaljuk a p erteket
             p_value = p_value / weight
-            filtered[i - 2, j - 2] = p_value
+            filtered[i - half_kernelsize, j - half_kernelsize] = p_value
 
+    end_time = time.perf_counter()
+    print((end_time - start_time) * 1000.0, "ezredmásodperc.")
     filtered = np.uint8(filtered)
     return filtered
 
@@ -257,25 +261,26 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
     image = img.copy()
     noised = gaussian_noise(image, sigma)
     filtered = np.zeros([noised.shape[0], noised.shape[1]])
-    imnoise = border_padding(noised, 2)
+    half_kernelsize = kernelsize // 2
+    imnoise = border_padding(noised, half_kernelsize)
     imnoise = np.float32(imnoise)
     filtered = np.float32(filtered)
 
-    integral_histogram = SHcomp(imnoise, kernelsize // 2, 256)
+    integral_histogram = SHcomp(imnoise, half_kernelsize, 256)
 
     rows, cols = imnoise.shape
 
     lut = create_lut(kernelsize)  # LUT keszitese
 
-    for i in range(2, rows - 2):
-        for j in range(2, cols - 2):
+    for i in range(half_kernelsize, rows - half_kernelsize):
+        for j in range(half_kernelsize, cols - half_kernelsize):
 
             weight = 0.0
             normalizalashoz = 0.0
             intenzitas_darabszam_dict = {}
 
-            m = kernelsize // 2
-            n = kernelsize // 2
+            m = half_kernelsize
+            n = half_kernelsize
 
             for x in range(i - m, i + m + 1):
                 for y in range(j - n, j + n + 1):
@@ -296,7 +301,7 @@ def bilateral_with_integral_histogram(img, sigma, kernelsize):
 
             # Normalizaljuk a sulyerteket
             suly = normalizalashoz / weight
-            filtered[i - 2, j - 2] = suly
+            filtered[i - half_kernelsize, j - half_kernelsize] = suly
 
     filtered = np.uint8(filtered)
     return filtered

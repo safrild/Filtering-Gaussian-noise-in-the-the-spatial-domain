@@ -153,7 +153,7 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     elif algorithm == "Sigma":
         final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelsize])
     elif algorithm == "Bilateral":
-        final = bilateral(images[inputphoto], sigma, kernels[kernelsize], range_sigmaparam,
+        final = bilateral(images[inputphoto], sigma, fullkernels[kernelsize], range_sigmaparam,
                           space_sigmaparam)
     elif algorithm == "Gradient inverse weighted method upgrade":
         if giw_repeat_times == "1":
