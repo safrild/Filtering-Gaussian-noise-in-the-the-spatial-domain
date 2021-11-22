@@ -5,10 +5,10 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget
 from gauss_noise_reduction import *
 
 # Kepek beolvasasa es tombbe helyezese
-Lenna = cv2.imread('img/Lenna_(test_image).png', cv2.IMREAD_GRAYSCALE)
-Chemical_plant = cv2.imread('img/chemical_plant.tiff', cv2.IMREAD_GRAYSCALE)
-Clock = cv2.imread('img/clock.tiff', cv2.IMREAD_GRAYSCALE)
-Wall = cv2.imread('img/brick_wall.tiff', cv2.IMREAD_GRAYSCALE)
+Lenna = cv2.imread('img/original_images/Lenna_(test_image).png', cv2.IMREAD_GRAYSCALE)
+Chemical_plant = cv2.imread('img/original_images/chemical_plant.tiff', cv2.IMREAD_GRAYSCALE)
+Clock = cv2.imread('img/original_images/clock.tiff', cv2.IMREAD_GRAYSCALE)
+Wall = cv2.imread('img/original_images/brick_wall.tiff', cv2.IMREAD_GRAYSCALE)
 images = {"Lenna": Lenna,
           "Chemical plant": Chemical_plant,
           "Clock": Clock,

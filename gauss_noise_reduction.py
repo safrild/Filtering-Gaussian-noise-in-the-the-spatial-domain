@@ -392,7 +392,7 @@ def ssim_function(original, denoised):
     denoised_mean = np.mean(denoised)
     # L = a pixelertekek dinamikus tartomanya
     l = 255
-    k1 = 0.01  # TODO: milyen k ertek az ajanlott? "very small constant"
+    k1 = 0.01  # k ajanlott erteke "nagyon kicsi konstans"
     c1 = (k1 * l) ** 2
     luminance = (2 * original_mean * denoised_mean + c1) / (original_mean ** 2 + denoised_mean ** 2 + c1)
 
