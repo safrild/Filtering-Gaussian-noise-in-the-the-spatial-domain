@@ -12,9 +12,13 @@ A demóalkalmazásban hat algoritmust implementáltam:
 - A bilaterális szűrő továbbfejlesztett változata
 
 ### A futtatáshoz szükséges csomagok:
+- math
+- statistics
+- sys
 - numpy
 - PyQt5
 - opencv-python
+- time
 
 ### A demóprogram elindítása
 
@@ -36,10 +40,14 @@ Six algorithms are included in the demo:
 - Bilateral filter
 - A possible upgrade of bilateral filter
 
-### Required packages to install:
+### Required modules to install:
+- math
+- statistics
+- sys
 - numpy
 - PyQt5
 - opencv-python
+- time
 
 ### How to start the demo
 
