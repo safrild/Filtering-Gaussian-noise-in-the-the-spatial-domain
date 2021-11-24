@@ -4,12 +4,12 @@ A projektben olyan különböző algoritmusokat valósítottam meg, melyekkel az
 A projekt elsődleges nyelve magyar, ezért a magyarázó kommentek magyarul íródtak.
 
 A demóalkalmazásban hat algoritmust implementáltam:
--- Kuwahara-szűrő
--- Szigma-szűrő
--- Gradiens inverz súlyozott metódus
--- A gradiens inverz súlyozott metódus továbbfejlesztett változata
--- Bilaterális szűrő
--- A bilaterális szűrő továbbfejlesztett változata
+- Kuwahara-szűrő
+- Szigma-szűrő
+- Gradiens inverz súlyozott metódus
+- A gradiens inverz súlyozott metódus továbbfejlesztett változata
+- Bilaterális szűrő
+- A bilaterális szűrő továbbfejlesztett változata
 
 ### A futtatáshoz szükséges csomagok:
 - numpy
@@ -29,12 +29,12 @@ This project is implementing different algorithms to achieve reduction of additi
 The primary language is Hungarian.
 
 Six algorithms are included in the demo:
--- Kuwahara algorithm
--- Sigma algorithm
--- Gradient inverse weighted method
--- A possible upgrade of gradient inverse weighted method
--- Bilateral filter
--- A possible upgrade of bilateral filter
+- Kuwahara algorithm
+- Sigma algorithm
+- Gradient inverse weighted method
+- A possible upgrade of gradient inverse weighted method
+- Bilateral filter
+- A possible upgrade of bilateral filter
 
 ### Required packages to install:
 - numpy
