@@ -33,9 +33,9 @@ def window():
     win.setWindowTitle("Menu")
     layout = QVBoxLayout()
     # Algoritmusvalaszto
-    label1 = QtWidgets.QLabel()
-    label1.setText("Algorithm: ")
-    layout.addWidget(label1)
+    labelAlgorithm = QtWidgets.QLabel()
+    labelAlgorithm.setText("Algorithm: ")
+    layout.addWidget(labelAlgorithm)
     comboBoxAlgorithm = QtWidgets.QComboBox(win)
     comboBoxAlgorithm.addItems(
         ["Kuwahara", "Sigma", "Gradient inverse weighted method", "Gradient inverse weighted method upgrade",
@@ -43,31 +43,31 @@ def window():
          "Bilateral with integral histogram"])
     layout.addWidget(comboBoxAlgorithm)
     # Sigma a zajositashoz
-    label2 = QtWidgets.QLabel(win)
-    label2.setText("Sigma value: ")
-    layout.addWidget(label2)
+    labelSigma = QtWidgets.QLabel(win)
+    labelSigma.setText("Sigma value: ")
+    layout.addWidget(labelSigma)
     comboBoxSigma = QtWidgets.QComboBox(win)
     comboBoxSigma.addItems(["20", "40", "80"])
     layout.addWidget(comboBoxSigma)
     # Kernelmeret
-    label4 = QtWidgets.QLabel(win)
-    label4.setText("Kernel size: ")
-    layout.addWidget(label4)
+    labelKernelSize = QtWidgets.QLabel(win)
+    labelKernelSize.setText("Kernel size: ")
+    layout.addWidget(labelKernelSize)
     comboBoxKernel = QtWidgets.QComboBox(win)
     comboBoxKernel.addItems(kernels)
     layout.addWidget(comboBoxKernel)
     # Input kep
-    label3 = QtWidgets.QLabel(win)
-    label3.setText("Input photo: ")
-    layout.addWidget(label3)
+    labelInputImage = QtWidgets.QLabel(win)
+    labelInputImage.setText("Input image: ")
+    layout.addWidget(labelInputImage)
     comboBoxInput = QtWidgets.QComboBox(win)
     comboBoxInput.addItems(images)
     layout.addWidget(comboBoxInput)
     # Range sigma
-    label6 = QtWidgets.QLabel(win)
-    label6.setText("Range sigma: ")
-    layout.addWidget(label6)
-    label6.hide()
+    labelRangeSigma = QtWidgets.QLabel(win)
+    labelRangeSigma.setText("Range sigma: ")
+    layout.addWidget(labelRangeSigma)
+    labelRangeSigma.hide()
     sliderRangeSigma = QtWidgets.QSlider(Qt.Horizontal)
     sliderRangeSigma.setMinimum(1)
     sliderRangeSigma.setMaximum(100)
@@ -75,10 +75,10 @@ def window():
     layout.addWidget(sliderRangeSigma)
     sliderRangeSigma.hide()
     # Spatial sigma
-    label7 = QtWidgets.QLabel(win)
-    label7.setText("Spatial sigma: ")
-    layout.addWidget(label7)
-    label7.hide()
+    labelSpatialSigma = QtWidgets.QLabel(win)
+    labelSpatialSigma.setText("Spatial sigma: ")
+    layout.addWidget(labelSpatialSigma)
+    labelSpatialSigma.hide()
     sliderSpaceSigma = QtWidgets.QSlider(Qt.Horizontal)
     sliderSpaceSigma.setMinimum(1)
     sliderSpaceSigma.setMaximum(100)
@@ -86,14 +86,14 @@ def window():
     layout.addWidget(sliderSpaceSigma)
     sliderSpaceSigma.hide()
     # GIW_new tobbszori alkalmazas
-    label8 = QtWidgets.QLabel(win)
-    label8.setText("Repeat times: ")
-    label8.hide()
-    layout.addWidget(label8)
-    comboBoxGIWRepeat = QtWidgets.QComboBox(win)
-    comboBoxGIWRepeat.addItems(["1", "2", "3"])
-    layout.addWidget(comboBoxGIWRepeat)
-    comboBoxGIWRepeat.hide()
+    labelRepeatTimes = QtWidgets.QLabel(win)
+    labelRepeatTimes.setText("Repeat times: ")
+    labelRepeatTimes.hide()
+    layout.addWidget(labelRepeatTimes)
+    comboBoxRepeatTimes = QtWidgets.QComboBox(win)
+    comboBoxRepeatTimes.addItems(["1", "2", "3"])
+    layout.addWidget(comboBoxRepeatTimes)
+    comboBoxRepeatTimes.hide()
     # Futtatas
     btnRun = QtWidgets.QPushButton(win)
     btnRun.setText("Run algorithm")
@@ -103,26 +103,26 @@ def window():
 
     def update_window():
         comboBoxKernel.clear()
-        label4.show()
+        labelKernelSize.show()
         comboBoxKernel.show()
-        label6.hide()
+        labelRangeSigma.hide()
         sliderRangeSigma.hide()
-        label7.hide()
+        labelSpatialSigma.hide()
         sliderSpaceSigma.hide()
-        label8.hide()
-        comboBoxGIWRepeat.hide()
+        labelRepeatTimes.hide()
+        comboBoxRepeatTimes.hide()
         if comboBoxAlgorithm.currentText() == "Kuwahara":
             comboBoxKernel.clear()
             comboBoxKernel.addItem("5x5 (time consuming)")
         elif comboBoxAlgorithm.currentText() == "Gradient inverse weighted method upgrade":
             comboBoxKernel.addItems(kernels)
-            label8.show()
-            comboBoxGIWRepeat.show()
+            labelRepeatTimes.show()
+            comboBoxRepeatTimes.show()
         elif comboBoxAlgorithm.currentText() == "Bilateral":
             comboBoxKernel.addItems(kernels)
-            label6.show()
+            labelRangeSigma.show()
             sliderRangeSigma.show()
-            label7.show()
+            labelSpatialSigma.show()
             sliderSpaceSigma.show()
         else:
             comboBoxKernel.addItems(kernels)
@@ -133,12 +133,12 @@ def window():
     btnRun.clicked.connect(
         lambda: call_algorithm(comboBoxAlgorithm.currentText(), comboBoxSigma.currentText(),
                                comboBoxInput.currentText(), comboBoxKernel.currentText(),
-                               sliderRangeSigma.value(), sliderSpaceSigma.value(), comboBoxGIWRepeat.currentText()))
+                               sliderRangeSigma.value(), sliderSpaceSigma.value(), comboBoxRepeatTimes.currentText()))
 
     sys.exit(app.exec_())
 
 
-def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmaparam, space_sigmaparam, giw_repeat_times):
+def call_algorithm(algorithm, sigmaparam, image, kernelsize, range_sigmaparam, space_sigmaparam, giw_repeat_times):
     global final
     print("\n")
     print(algorithm)
@@ -147,30 +147,30 @@ def call_algorithm(algorithm, sigmaparam, inputphoto, kernelsize, range_sigmapar
     sigma = int(sigmaparam)
     print('Applying the filter...')
     if algorithm == "Kuwahara":
-        final = kuwahara(images[inputphoto], sigma)
+        final = kuwahara(images[image], sigma)
     elif algorithm == "Gradient inverse weighted method":
-        final = gradient_inverse_weighted_method(images[inputphoto], sigma, kernels[kernelsize])
+        final = gradient_inverse_weighted_method(images[image], sigma, kernels[kernelsize])
     elif algorithm == "Sigma":
-        final = sigmaAlgorithm(images[inputphoto], sigma, kernels[kernelsize])
+        final = sigmaAlgorithm(images[image], sigma, kernels[kernelsize])
     elif algorithm == "Bilateral":
-        final = bilateral(images[inputphoto], sigma, fullkernels[kernelsize], range_sigmaparam,
+        final = bilateral(images[image], sigma, fullkernels[kernelsize], range_sigmaparam,
                           space_sigmaparam)
     elif algorithm == "Gradient inverse weighted method upgrade":
         if giw_repeat_times == "1":
-            final = gradient_inverse_weighted_method_upgrade(images[inputphoto], sigma, kernels[kernelsize], False)
+            final = gradient_inverse_weighted_method_upgrade(images[image], sigma, kernels[kernelsize], False)
         elif giw_repeat_times == "2":
-            first = gradient_inverse_weighted_method_upgrade(images[inputphoto], sigma, kernels[kernelsize], False)
+            first = gradient_inverse_weighted_method_upgrade(images[image], sigma, kernels[kernelsize], False)
             final = gradient_inverse_weighted_method_upgrade(first, sigma, kernels[kernelsize],
                                                              True)
         else:
-            first = gradient_inverse_weighted_method_upgrade(images[inputphoto], sigma, kernels[kernelsize], False)
+            first = gradient_inverse_weighted_method_upgrade(images[image], sigma, kernels[kernelsize], False)
             second = gradient_inverse_weighted_method_upgrade(first, sigma, kernels[kernelsize], True)
             final = gradient_inverse_weighted_method_upgrade(second, sigma, kernels[kernelsize], True)
     elif algorithm == "Bilateral with integral histogram":
-        final = bilateral_with_integral_histogram(images[inputphoto], sigma, fullkernels[kernelsize])
+        final = bilateral_with_integral_histogram(images[image], sigma, fullkernels[kernelsize])
     print('Filter applied!\n')
-    psnr_function(images[inputphoto], final)
-    ssim_function(images[inputphoto], final)
+    psnr_function(images[image], final)
+    ssim_function(images[image], final)
     # cv2.imwrite('img/denoised images/%(algorithm)s_%(noise)s_%(kernel)s.jpg' % {"algorithm": algorithm, "noise": sigma,
     #                                                                             "kernel": kernelsize}, final)
     cv2.imshow('Image after denoising', final)
