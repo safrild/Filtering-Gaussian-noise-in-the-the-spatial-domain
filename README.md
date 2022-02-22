@@ -1,3 +1,5 @@
+--- Scroll down for English ---
+
 # Gauss-zaj szűrése
 
 A projektben olyan különböző algoritmusokat valósítottam meg, melyekkel az additív Gauss-zaj szűrését mutathatjuk be a képtérben.
